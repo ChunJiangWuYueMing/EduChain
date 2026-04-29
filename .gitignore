@@ -216,3 +216,12 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+
+# Claude开发文档
+CLAUDE.md
+/docs/api_spec.md
+/docs/architecture.md
+/docs/contracts_spec.md
+/docs/data_model.md
+/docs/fingerprint_spec.md
