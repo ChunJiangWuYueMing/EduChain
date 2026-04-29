@@ -114,11 +114,11 @@ EduChain 采用四层架构设计：
 
 ```mermaid
 flowchart TD
-    A[前端层<br/>资料市场 / 上传页面 / 验证报告 / 我的钱包] --> B[后端服务层<br/>Flask API / Web3.py / 业务逻辑]
-    B --> C[内容指纹引擎<br/>文本提取 / jieba 分词 / SimHash 计算]
-    B --> D[区块链层<br/>EduToken / MaterialRegistry / DownloadLog]
-    B --> E[链下存储层<br/>本地文件系统 / HTTP 文件分发]
-    D --> F[Ganache 本地以太坊测试链]
+    A["前端层<br/>资料市场 / 上传页面 / 验证报告 / 我的钱包"] --> B["后端服务层<br/>Flask API / Web3.py / 业务逻辑"]
+    B --> C["内容指纹引擎<br/>文本提取 / jieba 分词 / SimHash 计算"]
+    B --> D["区块链层<br/>EduToken / MaterialRegistry / DownloadLog"]
+    B --> E["链下存储层<br/>本地文件系统 / HTTP 文件分发"]
+    D --> F["Ganache 本地以太坊测试链"]
 ```
 
 ### 架构说明
