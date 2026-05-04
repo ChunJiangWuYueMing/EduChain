@@ -1,0 +1,64 @@
+version: "3.8"
+
+services:
+  # ===== 区块链节点 =====
+  ganache:
+    image: trufflesuite/ganache:latest
+    container_name: educhain-ganache
+    ports:
+      - "8545:8545"
+    command:
+      - "--host=0.0.0.0"
+      - "--port=8545"
+      - "--accounts=10"
+      - "--defaultBalanceEther=1000"
+      - "--gasLimit=8000000"
+      - "--chain.chainId=1337"
+      - "--miner.blockGasLimit=8000000"
+      - "--database.dbPath=/ganache_data"
+    volumes:
+      - ganache_data:/ganache_data
+    networks:
+      - educhain-net
+
+  # ===== 后端 =====
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: educhain-backend
+    ports:
+      - "5000:5000"
+    environment:
+      - GANACHE_URL=http://ganache:8545
+      - CHAIN_ID=1337
+      - FLASK_DEBUG=1
+    volumes:
+      - ./backend:/app
+      - upload_data:/app/uploads
+    depends_on:
+      - ganache
+    networks:
+      - educhain-net
+
+  # ===== 前端（Nginx 托管静态文件） =====
+  frontend:
+    image: nginx:alpine
+    container_name: educhain-frontend
+    ports:
+      - "8080:80"
+    volumes:
+      - ./frontend:/usr/share/nginx/html:ro
+      - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - backend
+    networks:
+      - educhain-net
+
+volumes:
+  ganache_data:
+  upload_data:
+
+networks:
+  educhain-net:
+    driver: bridge

@@ -225,3 +225,16 @@ CLAUDE.md
 /docs/contracts_spec.md
 /docs/data_model.md
 /docs/fingerprint_spec.md
+
+# added
+__pycache__/
+*.pyc
+.env
+*.egg-info/
+dist/
+build/
+node_modules/
+backend/uploads/*
+!backend/uploads/.gitkeep
+ganache_data/
+.DS_Store
