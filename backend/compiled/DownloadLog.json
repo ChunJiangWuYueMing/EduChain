@@ -1,0 +1,259 @@
+{
+  "contractName": "DownloadLog",
+  "abi": [
+    {
+      "inputs": [],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "recordIndex",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "materialId",
+          "type": "string"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "downloader",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "uploader",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "price",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "timestamp",
+          "type": "uint256"
+        }
+      ],
+      "name": "DownloadRecorded",
+      "type": "event"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "name": "allRecords",
+      "outputs": [
+        {
+          "internalType": "string",
+          "name": "materialId",
+          "type": "string"
+        },
+        {
+          "internalType": "address",
+          "name": "downloader",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "uploader",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "price",
+          "type": "uint256"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "fileHash",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "uint256",
+          "name": "timestamp",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getRecordCount",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "owner",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_downloader",
+          "type": "address"
+        }
+      ],
+      "name": "queryByDownloader",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "string",
+              "name": "materialId",
+              "type": "string"
+            },
+            {
+              "internalType": "address",
+              "name": "downloader",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "uploader",
+              "type": "address"
+            },
+            {
+              "internalType": "uint256",
+              "name": "price",
+              "type": "uint256"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "fileHash",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "uint256",
+              "name": "timestamp",
+              "type": "uint256"
+            }
+          ],
+          "internalType": "struct DownloadLog.DownloadRecord[]",
+          "name": "",
+          "type": "tuple[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "_materialId",
+          "type": "string"
+        }
+      ],
+      "name": "queryByMaterial",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "string",
+              "name": "materialId",
+              "type": "string"
+            },
+            {
+              "internalType": "address",
+              "name": "downloader",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "uploader",
+              "type": "address"
+            },
+            {
+              "internalType": "uint256",
+              "name": "price",
+              "type": "uint256"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "fileHash",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "uint256",
+              "name": "timestamp",
+              "type": "uint256"
+            }
+          ],
+          "internalType": "struct DownloadLog.DownloadRecord[]",
+          "name": "",
+          "type": "tuple[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "_materialId",
+          "type": "string"
+        },
+        {
+          "internalType": "address",
+          "name": "_downloader",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_uploader",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_price",
+          "type": "uint256"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "_fileHash",
+          "type": "bytes32"
+        }
+      ],
+      "name": "recordDownload",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x608080604052346026575f80546001600160a01b031916331790556109b8908161002b8239f35b5f80fdfe60806040526004361015610011575f80fd5b5f3560e01c8063280fca111461057d578063719957d4146101e75780637e257dc8146101535780638da5cb5b1461012c578063ca267f281461010f5763f65ec6951461005b575f80fd5b3461010b57602036600319011261010b5760043567ffffffffffffffff811161010b5761008e60209136906004016106ca565b91908260405193849283378101600281520301902080546100ae81610856565b915f5b8281106100ca57604051806100c68682610624565b0390f35b806100ef6100e96100dd600194866108ca565b90549060031b1c6106f8565b506108f3565b6100f982876108df565b5261010481866108df565b50016100b1565b5f80fd5b3461010b575f36600319011261010b576020600154604051908152f35b3461010b575f36600319011261010b575f546040516001600160a01b039091168152602090f35b3461010b57602036600319011261010b5760043560015481101561010b5761017d6101c9916106f8565b506101878161079e565b600182015460028301546003840154600485015460059095015460405160c0808252909788976001600160a01b03968716979396909516929091880190610600565b94602087015260408601526060850152608084015260a08301520390f35b3461010b5760a036600319011261010b5760043567ffffffffffffffff811161010b576102189036906004016106ca565b906024356001600160a01b038116919082900361010b576044356001600160a01b038116939084900361010b575f5460643592906001600160a01b03163303610539576040519261026884610760565b67ffffffffffffffff831161051257601f19601f84011690604051610290602084018261077c565b848152368585011161010b57848460208301375f602086830101528552602085019486865260408101888152606082018381526080830190608435825260a084019242845260015499600160401b8b10156105125760018b016001556102f58b6106f8565b969096610526575180519067ffffffffffffffff8211610512576103198854610728565b601f81116104c1575b50602090601f831160011461042f579282600596937fd967e83cb161029ab14cc817b72bf4fba3e0a024d9108a6156d5ea5228e907c49e9d9b99969360809d9b99965f92610424575b50508160011b915f199060031b1c19161787555b516001870180546001600160a01b03199081166001600160a01b039384161790915591516002880180549093169116179055516003850155516004840155519101556040516103e190889087868237602081898101600281520301902061094e565b875f5260036020526103f68760405f2061094e565b5f848660405197889660608852816060890152838801378501015260208301524260408301528101030190a4005b015190505f8061036b565b90601f19831691895f52815f20925f5b8181106104a95750937fd967e83cb161029ab14cc817b72bf4fba3e0a024d9108a6156d5ea5228e907c49e9d9b99969360809d9b9996936001938360059b9810610491575b505050811b01875561037f565b01515f1960f88460031b161c191690555f8080610484565b9293602060018192878601518155019501930161043f565b8281111561032257885f5260205f20601f840160051c906020851061050a575b81601f9101920160051c03905f5b8281106104fd575050610322565b5f828201556001016104ef565b5f91506104e1565b634e487b7160e01b5f52604160045260245ffd5b634e487b7160e01b5f525f60045260245ffd5b606460405162461bcd60e51b815260206004820152602060248201527f446f776e6c6f61644c6f673a2063616c6c6572206973206e6f74206f776e65726044820152fd5b3461010b57602036600319011261010b576004356001600160a01b0381169081900361010b575f52600360205260405f2080546105b981610856565b915f5b8281106105d157604051806100c68682610624565b806105e46100e96100dd600194866108ca565b6105ee82876108df565b526105f981866108df565b50016105bc565b805180835260209291819084018484015e5f828201840152601f01601f1916010190565b602081016020825282518091526040820191602060408360051b8301019401925f915b83831061065657505050505090565b9091929394602080600192603f1985820301865288519060a080610683845160c0855260c0850190610600565b938780831b038682015116868501528780831b0360408201511660408501526060810151606085015260808101516080850152015191015297019301930191939290610647565b9181601f8401121561010b5782359167ffffffffffffffff831161010b576020838186019501011161010b57565b6001548110156107145760015f52600660205f20910201905f90565b634e487b7160e01b5f52603260045260245ffd5b90600182811c92168015610756575b602083101461074257565b634e487b7160e01b5f52602260045260245ffd5b91607f1691610737565b60c0810190811067ffffffffffffffff82111761051257604052565b90601f8019910116810190811067ffffffffffffffff82111761051257604052565b9060405191825f8254926107b184610728565b808452936001811690811561081c57506001146107d8575b506107d69250038361077c565b565b90505f9291925260205f20905f915b8183106108005750509060206107d6928201015f6107c9565b60209193508060019154838589010152019101909184926107e7565b9050602092506107d694915060ff191682840152151560051b8201015f6107c9565b67ffffffffffffffff81116105125760051b60200190565b906108608261083e565b61086d604051918261077c565b828152809261087e601f199161083e565b01905f5b82811061088e57505050565b60209060405161089d81610760565b606081525f838201525f60408201525f60608201525f60808201525f60a082015282828501015201610882565b8054821015610714575f5260205f2001905f90565b80518210156107145760209160051b010190565b9060405161090081610760565b60a06005829461090f8161079e565b8452600180841b036001820154166020850152600180841b03600282015416604085015260038101546060850152600481015460808501520154910152565b8054600160401b8110156105125761096b916001820181556108ca565b819291549060031b91821b915f19901b191617905556fea2646970667358221220a09a7268526ab8b21ef4c4c308453b0ca44b0695d2b1584219307e93c5bd88fe64736f6c63430008230033"
+}

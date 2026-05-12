@@ -1,0 +1,12 @@
+{
+  "name": "educhain-contracts",
+  "version": "1.0.0",
+  "description": "EduChain smart contracts",
+  "scripts": {
+    "compile": "node scripts/compile.js"
+  },
+  "dependencies": {
+    "solc": "^0.8.28",
+    "@openzeppelin/contracts": "^5.1.0"
+  }
+}
