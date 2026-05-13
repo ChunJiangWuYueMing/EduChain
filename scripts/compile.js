@@ -51,6 +51,7 @@ const input = {
     language: "Solidity",
     sources,
     settings: {
+        evmVersion: "shanghai",  // 必须与 Ganache hardfork 一致
         optimizer: { enabled: true, runs: 200 },
         viaIR: true,
         outputSelection: {
@@ -61,7 +62,7 @@ const input = {
     },
 };
 
-console.log("🔨 编译合约...");
+console.log("编译合约...");
 const output = JSON.parse(solc.compile(JSON.stringify(input), { import: findImports }));
 
 // 检查错误
@@ -69,10 +70,10 @@ if (output.errors) {
     let hasError = false;
     for (const err of output.errors) {
         if (err.severity === "error") {
-            console.error("❌ 编译错误:", err.formattedMessage);
+            console.error("编译错误:", err.formattedMessage);
             hasError = true;
         } else {
-            console.warn("⚠️  警告:", err.formattedMessage);
+            console.warn(" 警告:", err.formattedMessage);
         }
     }
     if (hasError) {
@@ -88,7 +89,7 @@ for (const file of CONTRACT_FILES) {
     const compiled = output.contracts[file][contractName];
 
     if (!compiled) {
-        console.error(`❌ 未找到合约 ${contractName}，请检查合约名是否与文件名一致`);
+        console.error(`未找到合约 ${contractName}，请检查合约名是否与文件名一致`);
         continue;
     }
 
@@ -100,7 +101,7 @@ for (const file of CONTRACT_FILES) {
 
     const outPath = path.join(OUTPUT_DIR, `${contractName}.json`);
     fs.writeFileSync(outPath, JSON.stringify(artifact, null, 2));
-    console.log(`✅ ${contractName} → ${outPath}`);
+    console.log(`${contractName} → ${outPath}`);
 }
 
-console.log("\n🎉 编译完成！ABI 和 Bytecode 已输出到 backend/compiled/");
+console.log("\n编译完成！ABI 和 Bytecode 已输出到 backend/compiled/");
