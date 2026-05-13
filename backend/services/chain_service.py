@@ -192,24 +192,51 @@ class ChainService:
 
     def _send_tx(self, contract_fn, from_addr: Optional[str] = None, gas: int = 500_000) -> dict:
         """
-        发送交易并等待回执。
+        发送交易并等待回执（Ganache unlocked account 模式）。
 
-        Args:
-            contract_fn: 已构建的合约函数调用（如 self._token.functions.mint(addr, 100)）
-            from_addr:   发送者地址，默认为 deployer
-            gas:         gas 上限
-
-        Returns:
-            交易回执 dict
-
-        Raises:
-            RuntimeError: 交易失败（status != 1）
+        适用于：deployer/owner 发起的管理交易、Ganache 开发环境。
         """
         sender = from_addr or self.deployer
         tx_hash = contract_fn.transact({
             "from": sender,
             "gas": gas,
         })
+        receipt = self.w3.eth.wait_for_transaction_receipt(tx_hash, timeout=30)
+        if receipt["status"] != 1:
+            raise RuntimeError(f"交易失败: tx={tx_hash.hex()}")
+        return dict(receipt)
+
+    def _send_signed_tx(
+        self,
+        contract_fn,
+        private_key: str,
+        from_addr: str,
+        gas: int = 500_000,
+    ) -> dict:
+        """
+        签名发送交易（私钥签名模式）。
+
+        适用于：用户发起的交易（approve、transfer 等），
+        以及未来迁移到真实网络时的统一发送方式。
+
+        Args:
+            contract_fn:  已构建的合约函数调用
+            private_key:  发送者私钥（hex 字符串，带或不带 0x 前缀）
+            from_addr:    发送者地址
+            gas:          gas 上限
+        """
+        nonce = self.w3.eth.get_transaction_count(
+            Web3.to_checksum_address(from_addr)
+        )
+        tx = contract_fn.build_transaction({
+            "from": Web3.to_checksum_address(from_addr),
+            "gas": gas,
+            "gasPrice": self.w3.eth.gas_price,
+            "nonce": nonce,
+            "chainId": config.CHAIN_ID,
+        })
+        signed = self.w3.eth.account.sign_transaction(tx, private_key)
+        tx_hash = self.w3.eth.send_raw_transaction(signed.raw_transaction)
         receipt = self.w3.eth.wait_for_transaction_receipt(tx_hash, timeout=30)
         if receipt["status"] != 1:
             raise RuntimeError(f"交易失败: tx={tx_hash.hex()}")

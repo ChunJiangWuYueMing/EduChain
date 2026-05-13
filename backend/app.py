@@ -1,8 +1,9 @@
 """EduChain Flask 应用入口"""
 import os
-from flask import Flask, jsonify
+from flask import Flask
 from flask_cors import CORS
 from config import config
+from utils.response import success, server_error
 
 
 def create_app() -> Flask:
@@ -11,7 +12,7 @@ def create_app() -> Flask:
     app.config["SECRET_KEY"] = config.SECRET_KEY
     app.config["MAX_CONTENT_LENGTH"] = config.MAX_CONTENT_LENGTH
 
-    CORS(app)
+    CORS(app, supports_credentials=True)
 
     # 确保上传目录存在
     os.makedirs(config.UPLOAD_FOLDER, exist_ok=True)
@@ -19,22 +20,29 @@ def create_app() -> Flask:
     # ---------- 初始化链服务 ----------
     from services.chain_service import chain_service
 
+    chain_ok = False
     try:
         chain_service.init_app()
+        chain_ok = True
         app.logger.info("✅ ChainService 初始化成功")
-        app.logger.info(f"   Ganache: {config.GANACHE_URL}")
-        app.logger.info(f"   Deployer: {chain_service.deployer}")
-        app.logger.info(f"   EduToken: {config.EDU_TOKEN_ADDRESS}")
-        app.logger.info(f"   MaterialRegistry: {config.MATERIAL_REGISTRY_ADDRESS}")
-        app.logger.info(f"   DownloadLog: {config.DOWNLOAD_LOG_ADDRESS}")
     except Exception as e:
         app.logger.warning(f"⚠️  ChainService 初始化失败: {e}")
-        app.logger.warning("   后端可启动，但链相关接口不可用。请确认 Ganache 已运行且合约已部署。")
 
-    # ---------- 健康检查 ----------
+    # ---------- 初始化用户服务 ----------
+    from services.user_service import user_service
+
+    if chain_ok:
+        try:
+            accounts = chain_service.get_ganache_accounts()
+            user_service.init_users(ganache_accounts=accounts)
+            user_count = len(user_service.get_all_users())
+            app.logger.info(f"✅ UserService 初始化成功，加载 {user_count} 个用户")
+        except Exception as e:
+            app.logger.warning(f"⚠️  UserService 初始化失败: {e}")
+
+    # ---------- 健康检查（统一响应格式） ----------
     @app.route("/api/health", methods=["GET"])
     def health():
-        """健康检查 & 链服务状态"""
         connected = chain_service.is_connected()
         data = {
             "status": "running",
@@ -56,9 +64,9 @@ def create_app() -> Flask:
             except Exception as e:
                 data["chain_error"] = str(e)
 
-        return jsonify({"code": 0, "msg": "ok", "data": data})
+        return success(data)
 
-    # ---------- 后续会注册蓝图 ----------
+    # ---------- 注册蓝图（第5-7步实现后取消注释） ----------
     # from routes.auth import auth_bp
     # from routes.material import material_bp
     # from routes.token import token_bp

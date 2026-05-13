@@ -1,8 +1,8 @@
 """
 token_service.py — 通证业务逻辑层
 
-封装注册奖励、下载扣费、抄袭扣罚等业务场景。
-所有链操作通过 chain_service 执行，本模块不直接接触 Web3。
+纯通证职责：余额查询、注册奖励、抄袭扣罚、交易历史。
+审查修正：下载扣费编排已迁至 material_service.py。
 """
 
 from dataclasses import dataclass
@@ -34,7 +34,7 @@ class TokenTransaction:
 
 
 class TokenService:
-    """通证业务服务"""
+    """通证业务服务（纯通证操作，不编排资料业务）"""
 
     # ---------- 查询 ----------
 
@@ -65,62 +65,6 @@ class TokenService:
         )
         return {
             "amount": config.REGISTER_REWARD,
-            "tx_hash": receipt["transactionHash"].hex(),
-            "block": receipt["blockNumber"],
-        }
-
-    # ---------- 下载扣费 ----------
-
-    @staticmethod
-    def process_download(material_id: str, downloader: str) -> dict:
-        """
-        处理下载扣费：
-          1. 查询资料信息（价格、上传者）
-          2. 检查下载者余额
-          3. 自动 approve + transferFrom
-          4. 记录下载日志
-
-        Returns:
-            dict 包含扣费详情
-
-        Raises:
-            ValueError: 资料不存在/已删除/余额不足/下载自己的资料
-        """
-        # 查询资料
-        material = chain_service.query_material(material_id)
-        if material is None:
-            raise ValueError(f"资料不存在: {material_id}")
-        if material.deleted:
-            raise ValueError(f"资料已被删除: {material_id}")
-        if downloader.lower() == material.uploader.lower():
-            raise ValueError("不能下载自己上传的资料")
-
-        # 检查余额
-        if material.price > 0:
-            balance = chain_service.get_edu_balance(downloader)
-            if balance < material.price:
-                raise ValueError(
-                    f"EDU 余额不足: 需要 {material.price}，当前 {balance}"
-                )
-
-        # 执行通证转移（chain_service.download_material 内部处理 approve）
-        receipt = chain_service.download_material(material_id, downloader)
-
-        # 记录下载日志到 DownloadLog 合约
-        file_hash = bytes.fromhex(material.sha256_hash.replace("0x", "").ljust(64, "0")[:64])
-        chain_service.record_download(
-            material_id=material_id,
-            downloader=downloader,
-            uploader=material.uploader,
-            price=material.price,
-            file_hash=file_hash,
-        )
-
-        return {
-            "material_id": material_id,
-            "downloader": downloader,
-            "uploader": material.uploader,
-            "price": material.price,
             "tx_hash": receipt["transactionHash"].hex(),
             "block": receipt["blockNumber"],
         }

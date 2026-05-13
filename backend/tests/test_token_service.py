@@ -1,7 +1,8 @@
 """
 token_service 业务逻辑测试
 
-前置条件同 test_chain_service.py
+测试纯通证操作：注册奖励、抄袭扣罚、交易历史。
+下载扣费测试已迁至 material_service 测试。
 
 用法:
   cd backend
@@ -26,7 +27,7 @@ def test_all():
     # 初始化
     chain_service.init_app()
     accounts = chain_service.get_ganache_accounts()
-    user_c = accounts[3]   # 新用户，避免与 chain_service 测试冲突
+    user_c = accounts[3]
     user_d = accounts[4]
 
     # ---------- 注册奖励 ----------
@@ -40,8 +41,9 @@ def test_all():
     token_service.reward_register(user_d)
     print(f"    UserD 余额: {token_service.get_balance(user_d)} EDU")
 
-    # ---------- 先注册一个资料用于下载测试 ----------
-    print("\n[2] 准备测试资料...")
+    # ---------- 抄袭扣罚 ----------
+    print("\n[2] 测试抄袭扣罚...")
+    # 先注册一个资料供扣罚引用
     content = b"Token service test material content."
     sha256_hash = hashlib.sha256(content).digest()
     chain_service.register_material(
@@ -56,55 +58,24 @@ def test_all():
         policy_value="",
         price=15,
     )
-    print(f"    ✅ 资料注册完成, 价格=15 EDU")
 
-    # ---------- 下载扣费 ----------
-    print("\n[3] 测试下载扣费流程...")
-    bal_d_before = token_service.get_balance(user_d)
-    bal_c_before = token_service.get_balance(user_c)
-
-    result = token_service.process_download("MAT_TOKEN_TEST", user_d)
-
-    bal_d_after = token_service.get_balance(user_d)
-    bal_c_after = token_service.get_balance(user_c)
-
-    print(f"    下载者 UserD: {bal_d_before} → {bal_d_after} EDU（-{result['price']}）")
-    print(f"    上传者 UserC: {bal_c_before} → {bal_c_after} EDU（+{result['price']}）")
-    assert bal_d_after == bal_d_before - 15
-    assert bal_c_after == bal_c_before + 15
-    print(f"    ✅ 扣费正确, tx={result['tx_hash'][:16]}...")
-
-    # ---------- 余额不足测试 ----------
-    print("\n[4] 测试余额不足拒绝...")
-    # 先把 user_d 余额耗尽
-    remaining = token_service.get_balance(user_d)
-    if remaining > 0:
-        chain_service.burn_edu(user_d, remaining, "test_drain")
-
-    try:
-        token_service.process_download("MAT_TOKEN_TEST", user_d)
-        print("    ❌ 应该抛出 ValueError")
-    except ValueError as e:
-        print(f"    ✅ 正确拒绝: {e}")
-
-    # ---------- 下载自己的资料测试 ----------
-    print("\n[5] 测试不能下载自己的资料...")
-    try:
-        token_service.process_download("MAT_TOKEN_TEST", user_c)
-        print("    ❌ 应该抛出 ValueError")
-    except ValueError as e:
-        print(f"    ✅ 正确拒绝: {e}")
-
-    # ---------- 抄袭扣罚 ----------
-    print("\n[6] 测试抄袭扣罚...")
     bal_before = token_service.get_balance(user_c)
     result = token_service.penalize_plagiarism(user_c, "MAT_TOKEN_TEST")
     bal_after = token_service.get_balance(user_c)
     print(f"    UserC: {bal_before} → {bal_after} EDU（-{result['amount']} 扣罚）")
     print(f"    ✅ 扣罚完成")
 
+    # ---------- 余额为零时扣罚 ----------
+    print("\n[3] 测试余额不足时扣罚...")
+    remaining = token_service.get_balance(user_d)
+    if remaining > 0:
+        chain_service.burn_edu(user_d, remaining, "test_drain")
+    result = token_service.penalize_plagiarism(user_d, "MAT_TOKEN_TEST")
+    assert result["amount"] == 0
+    print(f"    ✅ 余额为 0，扣罚 0 EDU: {result['note']}")
+
     # ---------- 交易历史 ----------
-    print("\n[7] 测试交易历史查询...")
+    print("\n[4] 测试交易历史查询...")
     history = token_service.get_transaction_history(user_c)
     print(f"    ✅ UserC 交易记录: {len(history)} 条")
     for tx in history[:3]:
