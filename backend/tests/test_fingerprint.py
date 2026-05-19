@@ -198,7 +198,7 @@ def test_all():
     print(f"    ✅ 空文本 SimHash = 0")
 
     assert hamming_distance(0, 0) == 0
-    assert hamming_distance(0xFFFFFFFFFFFFFFFF, 0) == 64
+    assert hamming_distance((1 << 256) - 1, 0) == 256
     print(f"    ✅ 边界汉明距离正确")
 
     # ---------- 总结 ----------

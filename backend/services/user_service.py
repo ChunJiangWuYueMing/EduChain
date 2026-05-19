@@ -14,6 +14,7 @@ user_service.py — 用户数据服务
 """
 
 import json
+import os
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
@@ -24,10 +25,6 @@ from config import config
 
 
 USERS_FILE = Path(__file__).parent.parent / "users.json"
-
-# Ganache 默认账户私钥（与 ganache --accounts 10 对应）
-# 首次 init 时从 Ganache 获取实际地址，私钥需要预配置或从 Ganache 读取
-# 这里用 Ganache 的默认 HD 钱包，具体值在 init_users 时动态填充
 
 
 @dataclass
@@ -72,18 +69,22 @@ class UserService:
     def __init__(self):
         self._users: dict[str, User] = {}          # student_id -> User
         self._addr_index: dict[str, str] = {}       # eth_address.lower() -> student_id
+        self._users_with_keys: list[User] = []
+        self._users_without_keys: list[User] = []
         self._initialized = False
+
+    # 项目固定助记词（与 deploy.py、Ganache 启动命令保持一致）
+    _FALLBACK_MNEMONIC = "test test test test test test test test test test test junk"
 
     def init_users(self, ganache_accounts: list[str], ganache_keys: Optional[list[str]] = None) -> None:
         """
         初始化用户数据。
 
-        从 users.json 加载用户，分配 Ganache 账户（从 index 1 开始，0 给 deployer）。
-        如果用户还没有密码，设置默认密码为学号。
-
-        Args:
-            ganache_accounts: Ganache 账户地址列表
-            ganache_keys:     Ganache 账户私钥列表（可选，用于签名模式）
+        私钥来源优先级（逐级尝试，取第一个非空值）：
+          1. ganache_keys 参数（调用方显式传入）
+          2. users.json 中已有的 eth_private_key
+          3. 环境变量 ACCOUNT_{n}_PRIVATE_KEY（deploy.py 写入 .env）
+          4. 从项目固定助记词派生（开发环境兜底）
         """
         if self._initialized:
             return
@@ -96,7 +97,9 @@ class UserService:
 
         users_data = data.get("users", [])
 
-        # 账户 0 给 deployer，用户从 1 开始分配
+        # 准备助记词派生的密钥作为兜底
+        derived_keys = self._derive_fallback_keys(len(ganache_accounts))
+
         account_offset = 1
         needs_save = False
 
@@ -110,9 +113,24 @@ class UserService:
                 u["eth_address"] = ganache_accounts[account_index]
                 needs_save = True
 
-            # 分配私钥
-            if not u.get("eth_private_key") and ganache_keys and account_index < len(ganache_keys):
-                u["eth_private_key"] = ganache_keys[account_index]
+            # 分配私钥（按优先级逐级尝试）
+            resolved_key = ""
+
+            # 优先级 1：调用方参数
+            if ganache_keys and account_index < len(ganache_keys):
+                resolved_key = ganache_keys[account_index]
+            # 优先级 2：users.json 已有值
+            if not resolved_key and u.get("eth_private_key"):
+                resolved_key = u["eth_private_key"]
+            # 优先级 3：环境变量（deploy.py 写入 .env）
+            if not resolved_key:
+                resolved_key = os.environ.get(f"ACCOUNT_{account_index}_PRIVATE_KEY", "")
+            # 优先级 4：助记词派生兜底
+            if not resolved_key and account_index < len(derived_keys):
+                resolved_key = derived_keys[account_index]
+
+            if resolved_key and resolved_key != u.get("eth_private_key"):
+                u["eth_private_key"] = resolved_key
                 needs_save = True
 
             # 设置默认密码（学号）
@@ -138,7 +156,52 @@ class UserService:
             with open(USERS_FILE, "w", encoding="utf-8") as f:
                 json.dump(data, f, ensure_ascii=False, indent=4)
 
+        # 初始化后审计：统计私钥覆盖情况
+        self._users_with_keys = [
+            u for u in self._users.values() if u.eth_private_key
+        ]
+        self._users_without_keys = [
+            u for u in self._users.values() if not u.eth_private_key
+        ]
+
         self._initialized = True
+
+    @property
+    def signing_ready(self) -> bool:
+        """是否有至少一个用户拥有私钥（签名交易可用）"""
+        return len(self._users_with_keys) > 0
+
+    @property
+    def key_summary(self) -> dict:
+        """私钥覆盖情况摘要"""
+        return {
+            "total_users": len(self._users),
+            "with_keys": len(self._users_with_keys),
+            "without_keys": len(self._users_without_keys),
+            "missing": [u.student_id for u in self._users_without_keys],
+        }
+
+    @staticmethod
+    def _derive_fallback_keys(count: int) -> list[str]:
+        """
+        从项目固定助记词派生私钥（开发环境兜底）。
+
+        返回长度为 count 的列表，index i 对应 Ganache 账户 i 的私钥。
+        如果 eth_account 不可用，返回空列表（不中断启动）。
+        """
+        try:
+            from eth_account import Account
+            Account.enable_unaudited_hdwallet_features()
+            keys = []
+            for i in range(count):
+                acct = Account.from_mnemonic(
+                    UserService._FALLBACK_MNEMONIC,
+                    account_path=f"m/44'/60'/0'/0/{i}",
+                )
+                keys.append("0x" + acct.key.hex())
+            return keys
+        except Exception:
+            return []
 
     # ---------- 查询 ----------
 

@@ -49,7 +49,7 @@ class MaterialData:
     course: str
     uploader: str
     sha256_hash: str      # hex string (0x...)
-    sim_hash: int         # uint64
+    sim_hash: int         # uint256 SimHash（256 位）
     text_length: int
     policy_type: int      # 0=公开, 1=同课程, 2=指定用户
     policy_value: str
@@ -113,11 +113,16 @@ class ChainService:
     def __init__(self):
         self.w3: Optional[Web3] = None
         self.deployer: Optional[str] = None
+        self.deployer_key: Optional[str] = None  # deployer 私钥（签名部署交易用）
 
         # 合约实例
         self._token: Optional[Contract] = None
         self._registry: Optional[Contract] = None
         self._download_log: Optional[Contract] = None
+
+        # 用户私钥注册表: address.lower() -> private_key
+        # 由 app.py 在初始化 user_service 后注入
+        self._user_keys: dict[str, str] = {}
 
         self._initialized = False
 
@@ -242,6 +247,34 @@ class ChainService:
             raise RuntimeError(f"交易失败: tx={tx_hash.hex()}")
         return dict(receipt)
 
+    # ---------- 用户私钥管理 ----------
+
+    def register_user_key(self, address: str, private_key: str) -> None:
+        """注册用户私钥（由 app.py 初始化时调用）"""
+        self._user_keys[address.lower()] = private_key
+
+    def get_user_key(self, address: str) -> Optional[str]:
+        """获取用户私钥"""
+        return self._user_keys.get(address.lower())
+
+    def _send_user_tx(self, contract_fn, user_addr: str, gas: int = 500_000) -> dict:
+        """
+        发送用户侧交易（使用用户私钥签名）。
+
+        适用于：approve、transfer 等必须由代币持有者本人发起的交易。
+        与 _send_tx（deployer 管理交易）明确区分。
+
+        Raises:
+            ValueError: 用户私钥未注册
+        """
+        key = self.get_user_key(user_addr)
+        if key is None:
+            raise ValueError(
+                f"用户私钥未注册: {user_addr}\n"
+                "请确保 user_service 已初始化并注入私钥到 chain_service"
+            )
+        return self._send_signed_tx(contract_fn, key, user_addr, gas)
+
     # ======================================================
     #  EduToken 操作
     # ======================================================
@@ -275,16 +308,15 @@ class ChainService:
 
     def approve_edu(self, owner_addr: str, spender_addr: str, amount: int) -> dict:
         """
-        授权代扣（下载前需要下载者授权 MaterialRegistry 合约代扣）
+        授权代扣（下载前需要下载者授权 MaterialRegistry 合约代扣）。
 
-        注意：Ganache 环境下可以用 deployer 替任何账户发交易，
-        但生产环境需要用户自己签名。这里为简化用 owner_addr 直接发。
+        使用 owner 的私钥签名，因为只有代币持有者本人能授权。
         """
         self._ensure_init()
         owner_ck = Web3.to_checksum_address(owner_addr)
         spender_ck = Web3.to_checksum_address(spender_addr)
         fn = self._token.functions.approve(spender_ck, amount)
-        return self._send_tx(fn, from_addr=owner_ck)
+        return self._send_user_tx(fn, owner_ck)
 
     def get_edu_allowance(self, owner_addr: str, spender_addr: str) -> int:
         """查询授权额度"""
@@ -295,12 +327,13 @@ class ChainService:
         ).call()
 
     def transfer_edu(self, from_addr: str, to_addr: str, amount: int) -> dict:
-        """直接转账 EDU"""
+        """直接转账 EDU（使用发送者私钥签名）"""
         self._ensure_init()
+        from_ck = Web3.to_checksum_address(from_addr)
         fn = self._token.functions.transfer(
             Web3.to_checksum_address(to_addr), amount
         )
-        return self._send_tx(fn, from_addr=Web3.to_checksum_address(from_addr))
+        return self._send_user_tx(fn, from_ck)
 
     # ======================================================
     #  MaterialRegistry 操作
@@ -325,7 +358,7 @@ class ChainService:
         Args:
             material_id: 后端生成的唯一 ID
             sha256_hash: 32 字节的 SHA-256 哈希（bytes）
-            sim_hash:    64 位 SimHash 整数
+            sim_hash:    256 位 SimHash 整数
             其余参数见 MaterialRegistry.register
         """
         self._ensure_init()
@@ -335,7 +368,7 @@ class ChainService:
             course,
             Web3.to_checksum_address(uploader),
             sha256_hash,        # bytes32
-            sim_hash,           # uint64
+            sim_hash,           # uint256
             text_length,        # uint32
             policy_type,        # uint8
             policy_value,
@@ -349,11 +382,11 @@ class ChainService:
         try:
             raw = self._registry.functions.query(material_id).call()
         except Exception as e:
-            # 如果是 "material not found" 的 revert，返回 None
-            error_msg = str(e).lower()
-            if "not found" in error_msg or "revert" in error_msg:
+            error_msg = str(e)
+            # 仅对合约明确的 "material not found" revert 返回 None
+            if "MaterialRegistry: material not found" in error_msg:
                 return None
-            # 其他错误向上抛出，方便调试
+            # 其他异常（ABI 不匹配、节点故障、EVM 错误等）向上抛出
             raise
         return self._parse_material(raw)
 

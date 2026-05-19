@@ -24,8 +24,8 @@ services:
   # ===== 后端 =====
   backend:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: backend/Dockerfile
     container_name: educhain-backend
     ports:
       - "5000:5000"

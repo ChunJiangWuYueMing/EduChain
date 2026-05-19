@@ -9,7 +9,7 @@ verifier.py — 双层验证引擎
 第二层: SimHash 相似度检测（内容级防抄袭）
   - 上传时计算文本 SimHash，存链上
   - 新上传时与所有已有资料比对汉明距离
-  - d ≤ 3 高度相似，d 4-10 衍生版本
+  - d ≤ 12 高度相似，d 13-40 衍生版本
 """
 
 import hashlib
@@ -31,7 +31,7 @@ class FingerprintResult:
     """指纹计算结果"""
     sha256_hash: bytes          # 32 字节原始哈希
     sha256_hex: str             # 十六进制字符串
-    sim_hash: int               # 64 位 SimHash
+    sim_hash: int               # 256 位 SimHash
     text_length: int            # 提取文本长度
     text_preview: str           # 文本前 200 字预览
 

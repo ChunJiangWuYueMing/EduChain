@@ -27,7 +27,7 @@ contract MaterialRegistry {
         string   course;        // 所属课程
         address  uploader;      // 上传者地址
         bytes32  sha256Hash;    // 文件 SHA-256 哈希
-        uint64   simHash;       // 内容 SimHash 指纹
+        uint256  simHash;       // 内容 SimHash 指纹
         uint32   textLength;    // 提取文本长度
         uint8    policyType;    // 访问策略类型 (0=公开, 1=同课程, 2=指定用户)
         string   policyValue;   // 策略参数（如课程编号、用户列表 JSON）
@@ -58,7 +58,7 @@ contract MaterialRegistry {
         string   name,
         address  indexed uploader,
         bytes32  sha256Hash,
-        uint64   simHash,
+        uint256  simHash,
         uint256  price,
         uint256  timestamp
     );
@@ -75,7 +75,7 @@ contract MaterialRegistry {
         string indexed id,
         uint32 newVersion,
         bytes32 newSha256Hash,
-        uint64  newSimHash,
+        uint256 newSimHash,
         uint256 timestamp
     );
 
@@ -115,7 +115,7 @@ contract MaterialRegistry {
         string calldata _course,
         address         _uploader,
         bytes32         _sha256Hash,
-        uint64          _simHash,
+        uint256         _simHash,
         uint32          _textLength,
         uint8           _policyType,
         string calldata _policyValue,
@@ -168,7 +168,7 @@ contract MaterialRegistry {
     function update(
         string calldata _id,
         bytes32         _newSha256Hash,
-        uint64          _newSimHash,
+        uint256         _newSimHash,
         uint32          _newTextLength
     ) external onlyOwner {
         Material storage m = materials[_id];

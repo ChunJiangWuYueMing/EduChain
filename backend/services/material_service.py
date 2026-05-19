@@ -149,6 +149,13 @@ class MaterialService:
             price=price,
         )
 
+        # --- 重命名文件：加上 material_id 前缀，使下载时能找到 ---
+        ext = Path(file_path).suffix
+        safe_name = Path(original_name).stem
+        new_filename = f"{material_id}_{safe_name}{ext}"
+        new_path = os.path.join(config.UPLOAD_FOLDER, new_filename)
+        os.rename(file_path, new_path)
+
         return UploadResult(
             material_id=material_id,
             name=original_name,

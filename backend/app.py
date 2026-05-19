@@ -28,7 +28,7 @@ def create_app() -> Flask:
     except Exception as e:
         app.logger.warning(f"⚠️  ChainService 初始化失败: {e}")
 
-    # ---------- 初始化用户服务 ----------
+    # ---------- 初始化用户服务 + 注入私钥 ----------
     from services.user_service import user_service
 
     if chain_ok:
@@ -37,6 +37,32 @@ def create_app() -> Flask:
             user_service.init_users(ganache_accounts=accounts)
             user_count = len(user_service.get_all_users())
             app.logger.info(f"✅ UserService 初始化成功，加载 {user_count} 个用户")
+
+            # 将用户私钥注入 chain_service，用于签名交易
+            keys_registered = 0
+            for user in user_service.get_all_users():
+                if user.eth_private_key and user.eth_address:
+                    chain_service.register_user_key(user.eth_address, user.eth_private_key)
+                    keys_registered += 1
+
+            summary = user_service.key_summary
+            if keys_registered > 0:
+                app.logger.info(
+                    f"✅ 用户签名交易已就绪: "
+                    f"{keys_registered}/{summary['total_users']} 个用户私钥已注入 ChainService"
+                )
+            else:
+                app.logger.warning(
+                    f"⚠️  用户签名交易不可用: 0/{summary['total_users']} 个用户拥有私钥\n"
+                    f"   approve/transfer 等用户侧交易将会失败\n"
+                    f"   请确保: (1) Ganache 使用固定助记词启动 (2) 已运行 deploy.py"
+                )
+
+            if summary["without_keys"]:
+                app.logger.info(
+                    f"   缺少私钥的用户: {summary['missing']}"
+                )
+
         except Exception as e:
             app.logger.warning(f"⚠️  UserService 初始化失败: {e}")
 
