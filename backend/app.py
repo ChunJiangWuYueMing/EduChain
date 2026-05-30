@@ -92,15 +92,16 @@ def create_app() -> Flask:
 
         return success(data)
 
-    # ---------- 注册蓝图（第5-7步实现后取消注释） ----------
-    # from routes.auth import auth_bp
-    # from routes.material import material_bp
-    # from routes.token import token_bp
-    # from routes.audit import audit_bp
-    # app.register_blueprint(auth_bp, url_prefix="/api/auth")
-    # app.register_blueprint(material_bp, url_prefix="/api/material")
-    # app.register_blueprint(token_bp, url_prefix="/api/token")
-    # app.register_blueprint(audit_bp, url_prefix="/api/audit")
+    # ---------- 注册蓝图 ----------
+    from routes.auth import auth_bp
+    from routes.material import material_bp
+    from routes.token import token_bp
+    from routes.audit import audit_bp
+
+    app.register_blueprint(auth_bp, url_prefix="/api/auth")
+    app.register_blueprint(material_bp, url_prefix="/api/material")
+    app.register_blueprint(token_bp, url_prefix="/api/token")
+    app.register_blueprint(audit_bp, url_prefix="/api/audit")
 
     return app
 

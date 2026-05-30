@@ -92,7 +92,7 @@ class UserService:
         if not USERS_FILE.exists():
             raise FileNotFoundError(f"用户数据文件不存在: {USERS_FILE}")
 
-        with open(USERS_FILE) as f:
+        with open(USERS_FILE, encoding="utf-8") as f:
             data = json.load(f)
 
         users_data = data.get("users", [])
