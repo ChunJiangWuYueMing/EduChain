@@ -17,7 +17,7 @@ class Config:
     ALLOWED_EXTENSIONS: set = field(default_factory=lambda: {"pdf", "docx", "pptx", "txt", "md"})
 
     # --- Ganache / Web3 ---
-    GANACHE_URL: str = os.getenv("GANACHE_URL", "http://ganache:8545")
+    GANACHE_URL: str = os.getenv("GANACHE_URL", "http://127.0.0.1:8545")
     CHAIN_ID: int = int(os.getenv("CHAIN_ID", "1337"))
 
     # 部署合约的账户索引（Ganache 默认 10 个账户，用第 0 个做 owner）

@@ -1,182 +1,201 @@
 """
-routes/material.py — 资料路由
+Material management routes.
 
-POST /api/material/upload             — 上传资料（multipart/form-data）
-GET  /api/material/list               — 资料列表（支持 course/search/page）
-GET  /api/material/<id>               — 资料详情
-POST /api/material/<id>/download      — 下载资料（通证扣费 + 文件下发）
-POST /api/material/<id>/verify        — 独立验证（上传文件比对链上记录）
-DELETE /api/material/<id>             — 软删除
+Endpoints:
+  POST /api/material/upload
+  GET  /api/material/list
+  GET  /api/material/<id>
+  GET  /api/material/<id>/download
+  POST /api/material/verify
+  POST /api/material/<id>/update
+  DELETE /api/material/<id>
 """
 
 import os
 import time
+import uuid
 
-from flask import Blueprint, request, g, send_file
+from flask import Blueprint, current_app, request, send_file, session
 
 from config import config
 from services.material_service import material_service
-from utils.response import success, bad_request, not_found, forbidden, server_error
-from utils.auth import login_required
+from utils.response import (
+    bad_request,
+    forbidden,
+    not_found,
+    server_error,
+    success,
+    unauthorized,
+)
 
 material_bp = Blueprint("material", __name__)
 
 
+def _require_login():
+    user = session.get("user")
+    if user is None:
+        return None, unauthorized("请先登录")
+    return user, None
+
+
 def _allowed_file(filename: str) -> bool:
-    """检查文件扩展名"""
-    return "." in filename and \
-           filename.rsplit(".", 1)[1].lower() in config.ALLOWED_EXTENSIONS
+    if "." not in filename:
+        return False
+    ext = filename.rsplit(".", 1)[1].lower()
+    return ext in config.ALLOWED_EXTENSIONS
 
 
-# ==========================================================
-#  上传
-# ==========================================================
+def _stored_material_extension(material_id: str) -> str:
+    if not os.path.exists(config.UPLOAD_FOLDER):
+        return ""
+
+    for filename in os.listdir(config.UPLOAD_FOLDER):
+        if filename.startswith(material_id):
+            ext = os.path.splitext(filename)[1].lower()
+            if ext.lstrip(".") in config.ALLOWED_EXTENSIONS:
+                return ext
+    return ""
+
+
+def _positive_int_arg(name: str, default: int, max_value: int | None = None) -> tuple[int | None, tuple | None]:
+    raw = request.args.get(name, default)
+    try:
+        value = int(raw)
+    except (TypeError, ValueError):
+        return None, bad_request(f"{name} 必须是正整数")
+
+    value = max(1, value)
+    if max_value is not None:
+        value = min(max_value, value)
+    return value, None
+
+
+def _save_temp_file(file_storage, prefix: str, fallback_ext: str = "") -> tuple[str | None, tuple]:
+    filename = file_storage.filename
+    if fallback_ext and not os.path.splitext(filename)[1]:
+        filename = f"{filename}{fallback_ext}"
+
+    temp_name = f"{prefix}_{int(time.time())}_{uuid.uuid4().hex[:8]}_{filename}"
+    temp_path = os.path.join(config.UPLOAD_FOLDER, temp_name)
+    try:
+        file_storage.save(temp_path)
+    except Exception as exc:
+        return None, server_error(f"文件保存失败: {exc}")
+
+    if not os.path.exists(temp_path) or os.path.getsize(temp_path) == 0:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+        return None, bad_request("上传失败：文件内容为空，请重新选择本地文件或重新导出后再试")
+
+    return temp_path, None
+
 
 @material_bp.route("/upload", methods=["POST"])
-@login_required
 def upload():
-    """
-    上传资料
+    user, err = _require_login()
+    if err:
+        return err
 
-    表单字段 (multipart/form-data):
-        file:         文件（必须，≤50MB，支持 pdf/docx/pptx/txt/md）
-        course:       课程编号（必须）
-        price:        下载价格 EDU（可选，默认 10）
-        policy_type:  访问策略（可选，0=公开 1=同课程，默认 0）
-
-    返回:
-        资料 ID、SHA-256、SimHash、上传奖励、相似资料列表
-    """
-    # 校验文件
     if "file" not in request.files:
-        return bad_request("缺少文件字段 'file'")
+        return bad_request("请选择要上传的文件")
 
     file = request.files["file"]
     if file.filename == "":
-        return bad_request("未选择文件")
+        return bad_request("文件名不能为空")
 
     if not _allowed_file(file.filename):
-        exts = ", ".join(config.ALLOWED_EXTENSIONS)
-        return bad_request(f"不支持的文件格式，允许: {exts}")
+        return bad_request(
+            f"不支持的文件格式，允许: {', '.join(sorted(config.ALLOWED_EXTENSIONS))}"
+        )
 
-    # 读取表单参数
-    course = (request.form.get("course") or "").strip()
+    material_name = request.form.get("name", "").strip() or file.filename
+    course = request.form.get("course", "").strip()
     if not course:
-        return bad_request("课程编号 course 不能为空")
+        return bad_request("所属课程不能为空")
 
-    price = request.form.get("price", "10")
     try:
-        price = int(price)
-    except ValueError:
-        return bad_request("price 必须是整数")
+        policy_type = int(request.form.get("policy_type", 0))
+        price = int(request.form.get("price", 5))
+    except (TypeError, ValueError):
+        return bad_request("访问策略和价格必须是整数")
 
-    policy_type = request.form.get("policy_type", "0")
-    try:
-        policy_type = int(policy_type)
-    except ValueError:
-        return bad_request("policy_type 必须是整数")
+    if policy_type not in (0, 1, 2):
+        return bad_request("访问策略类型无效")
+    if price < 0:
+        return bad_request("价格不能为负数")
 
-    # 保存文件到临时路径
-    original_name = file.filename
-    temp_name = f"tmp_{int(time.time())}_{original_name}"
-    temp_path = os.path.join(config.UPLOAD_FOLDER, temp_name)
-    file.save(temp_path)
+    policy_value = request.form.get("policy_value", "").strip()
+
+    temp_path, save_err = _save_temp_file(file, "upload")
+    if save_err:
+        return save_err
 
     try:
         result = material_service.upload(
             file_path=temp_path,
-            original_name=original_name,
+            original_name=material_name,
             course=course,
-            uploader_address=g.user["eth_address"],
+            uploader_address=user["eth_address"],
             policy_type=policy_type,
-            policy_value="",
+            policy_value=policy_value,
             price=price,
         )
-        return success(result.to_dict(), msg="上传成功")
-    except ValueError as e:
-        # 清理临时文件
-        if os.path.exists(temp_path):
-            os.unlink(temp_path)
-        return bad_request(str(e))
-    except Exception as e:
-        if os.path.exists(temp_path):
-            os.unlink(temp_path)
-        return server_error(f"上传失败: {e}")
+    except ValueError as exc:
+        if temp_path and os.path.exists(temp_path):
+            os.remove(temp_path)
+        return bad_request(str(exc))
+    except Exception as exc:
+        if temp_path and os.path.exists(temp_path):
+            os.remove(temp_path)
+        current_app.logger.error("上传失败: %s", exc)
+        return server_error(f"上传失败: {exc}")
 
+    return success(result.to_dict(), "上传成功")
 
-# ==========================================================
-#  列表
-# ==========================================================
 
 @material_bp.route("/list", methods=["GET"])
 def list_materials():
-    """
-    资料列表
-
-    查询参数:
-        course:    按课程筛选（可选）
-        search:    搜索关键词（可选，匹配名称和课程）
-        page:      页码（默认 1）
-        page_size: 每页数量（默认 20）
-    """
     course = request.args.get("course", "").strip() or None
     search = request.args.get("search", "").strip() or None
-    page = request.args.get("page", "1")
-    page_size = request.args.get("page_size", "20")
+    page, err = _positive_int_arg("page", 1)
+    if err:
+        return err
+    page_size, err = _positive_int_arg("page_size", 20, max_value=100)
+    if err:
+        return err
 
-    try:
-        page = max(1, int(page))
-        page_size = max(1, min(100, int(page_size)))
-    except ValueError:
-        return bad_request("page 和 page_size 必须是整数")
-
-    try:
-        result = material_service.list_materials(
-            course=course, search=search, page=page, page_size=page_size
-        )
-        return success(result)
-    except Exception as e:
-        return server_error(f"查询失败: {e}")
-
-
-# ==========================================================
-#  详情
-# ==========================================================
-
-@material_bp.route("/<material_id>", methods=["GET"])
-def detail(material_id: str):
-    """查询单个资料详情"""
-    result = material_service.get_material(material_id)
-    if result is None:
-        return not_found(f"资料不存在: {material_id}")
+    result = material_service.list_materials(
+        course=course, search=search, page=page, page_size=page_size
+    )
     return success(result)
 
 
-# ==========================================================
-#  下载
-# ==========================================================
+@material_bp.route("/<material_id>", methods=["GET"])
+def get_material(material_id):
+    material = material_service.get_material(material_id)
+    if material is None:
+        return not_found("资料不存在")
+    return success(material)
 
-@material_bp.route("/<material_id>/download", methods=["POST"])
-@login_required
-def download(material_id: str):
-    """
-    下载资料
 
-    需要登录。下载者余额 >= 资料价格时自动扣费，
-    扣费成功后返回文件流。
-    """
+@material_bp.route("/<material_id>/download", methods=["GET"])
+def download_material(material_id):
+    user, err = _require_login()
+    if err:
+        return err
+
     try:
         result = material_service.download(
             material_id=material_id,
-            downloader_address=g.user["eth_address"],
-            downloader_courses=g.user.get("courses", []),
+            downloader_address=user["eth_address"],
+            downloader_courses=user.get("courses", []),
         )
-    except ValueError as e:
-        return bad_request(str(e))
-    except Exception as e:
-        return server_error(f"下载失败: {e}")
+    except ValueError as exc:
+        return bad_request(str(exc))
+    except Exception as exc:
+        current_app.logger.error("下载失败: %s", exc)
+        return server_error(f"下载失败: {exc}")
 
-    # 返回文件流
     return send_file(
         result.file_path,
         as_attachment=True,
@@ -184,63 +203,120 @@ def download(material_id: str):
     )
 
 
-# ==========================================================
-#  验证
-# ==========================================================
-
-@material_bp.route("/<material_id>/verify", methods=["POST"])
-def verify(material_id: str):
-    """
-    独立验证
-
-    表单字段 (multipart/form-data):
-        file: 待验证的文件
-
-    将上传的文件与链上记录的 SHA-256 和 SimHash 比对，
-    返回完整性验证报告。
-    """
+@material_bp.route("/verify", methods=["POST"])
+def verify():
     if "file" not in request.files:
-        return bad_request("缺少文件字段 'file'")
+        return bad_request("请选择要验证的文件")
 
     file = request.files["file"]
-    if file.filename == "":
-        return bad_request("未选择文件")
+    material_id = request.form.get("material_id", "").strip()
 
-    # 保存到临时路径
-    temp_name = f"verify_{int(time.time())}_{file.filename}"
-    temp_path = os.path.join(config.UPLOAD_FOLDER, temp_name)
-    file.save(temp_path)
+    if not material_id:
+        return bad_request("资料 ID 不能为空")
+    if file.filename == "":
+        return bad_request("文件名不能为空")
+
+    temp_path, save_err = _save_temp_file(
+        file,
+        "verify",
+        fallback_ext=_stored_material_extension(material_id),
+    )
+    if save_err:
+        return save_err
 
     try:
-        result = material_service.verify(temp_path, material_id)
-        return success(result)
-    except ValueError as e:
-        return bad_request(str(e))
-    except Exception as e:
-        return server_error(f"验证失败: {e}")
+        result = material_service.verify(file_path=temp_path, material_id=material_id)
+    except ValueError as exc:
+        return not_found(str(exc))
     finally:
-        # 验证完删除临时文件
-        if os.path.exists(temp_path):
-            os.unlink(temp_path)
+        if temp_path and os.path.exists(temp_path):
+            os.remove(temp_path)
+
+    return success(result)
 
 
-# ==========================================================
-#  删除
-# ==========================================================
+@material_bp.route("/<material_id>/update", methods=["POST"])
+def update_material(material_id):
+    user, err = _require_login()
+    if err:
+        return err
+
+    material = material_service.get_material(material_id)
+    if material is None:
+        return not_found("资料不存在")
+    if material["uploader"].lower() != user["eth_address"].lower():
+        return forbidden("只能修改自己上传的资料")
+
+    body = request.get_json(silent=True) or {}
+    name = body.get("name", "").strip() or material["name"]
+    course = body.get("course", "").strip() or material["course"]
+    try:
+        policy_type = int(body.get("policy_type", material["policy_type"]))
+        price = int(body.get("price", material["price"]))
+    except (TypeError, ValueError):
+        return bad_request("访问策略和价格必须是整数")
+    policy_value = body.get("policy_value", "").strip()
+
+    if policy_type not in (0, 1, 2):
+        return bad_request("访问策略类型无效")
+    if price < 0:
+        return bad_request("价格不能为负数")
+
+    try:
+        if "file" in request.files and request.files["file"].filename:
+            file = request.files["file"]
+            if not _allowed_file(file.filename):
+                return bad_request("不支持的文件格式")
+            temp_path, save_err = _save_temp_file(file, "update")
+            if save_err:
+                return save_err
+
+            from fingerprint.verifier import compute_fingerprint
+            from services.chain_service import chain_service
+
+            fp = compute_fingerprint(temp_path)
+            chain_service.update_material(
+                material_id, fp.sha256_hash, fp.sim_hash, fp.text_length
+            )
+            os.remove(temp_path)
+
+        return success(
+            {
+                "material_id": material_id,
+                "name": name,
+                "course": course,
+                "policy_type": policy_type,
+                "policy_value": policy_value,
+                "price": price,
+            },
+            "更新成功",
+        )
+    except Exception as exc:
+        current_app.logger.error("更新失败: %s", exc)
+        return server_error(f"更新失败: {exc}")
+
 
 @material_bp.route("/<material_id>", methods=["DELETE"])
-@login_required
-def delete(material_id: str):
-    """
-    软删除资料
+def delete_material(material_id):
+    user, err = _require_login()
+    if err:
+        return err
 
-    只有上传者本人可以删除。
-    """
+    material = material_service.get_material(material_id)
+    if material is None:
+        return not_found("资料不存在")
+
+    from services.user_service import user_service
+
+    is_admin = user_service.is_admin(user["student_id"])
+    is_owner = material["uploader"].lower() == user["eth_address"].lower()
+    if not is_admin and not is_owner:
+        return forbidden("只能删除自己上传的资料")
+
     try:
-        result = material_service.soft_delete(material_id, g.user["eth_address"])
-        return success(result, msg="删除成功")
-    except Exception as e:
-        error_msg = str(e)
-        if "only uploader" in error_msg.lower():
-            return forbidden("只有上传者可以删除该资料")
-        return server_error(f"删除失败: {e}")
+        result = material_service.soft_delete(material_id, user["eth_address"])
+    except Exception as exc:
+        current_app.logger.error("删除失败: %s", exc)
+        return server_error(f"删除失败: {exc}")
+
+    return success(result, "删除成功")

@@ -1,11 +1,11 @@
 {
     "users": [
         {
-            "student_id": "2024001",
+            "student_id": "2023116101",
             "name": "张三",
-            "password_hash": "scrypt:32768:8:1$cVJlbx9ZBWJXbgIF$35652e4ddfc3aec68e76c23f436c7ca040dd0ccc016cbd2a0e1368f936cfb12a35ec87e4651aace934d5233bedbd19a6cf343ba3669f7d83d76ba73d2b568dee",
-            "eth_address": "0x2BB61a3Bed49054C1948AC17233A79d9958a833f",
-            "eth_private_key": "0x0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d",
+            "password_hash": "scrypt:32768:8:1$S8cF6wMTXr52FGtb$3f9cafe6934817ccbd5ba2b59a92676578a235dedb5f6c9fa7a280fa75a908832a6a00efd2fbbd175a18632b295509026417558c2b0098995a797ea0a79e5860",
+            "eth_address": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+            "eth_private_key": "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d",
             "courses": [
                 "CS201",
                 "CS301",
@@ -14,11 +14,11 @@
             "role": "student"
         },
         {
-            "student_id": "2024002",
+            "student_id": "2023116102",
             "name": "李四",
-            "password_hash": "scrypt:32768:8:1$VymegOsEfF7MVxiv$7ede4100f6fd9103ce3297c26ca63bf91539ef337d7c50d04ce1bf75041bcf802b1c8e86330631de23588f044df535cf6cb1314f90644a82bd13c356b72c2da4",
-            "eth_address": "0x2fe75317fB7B1C4B12a6cBc0A9fCA9B9b83a99dd",
-            "eth_private_key": "0x0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a",
+            "password_hash": "scrypt:32768:8:1$ZDFXHszaJTaEU8L0$b7822c4522d5d0e447bc5cbc941a4bea606c4eee1b458ae7b66bf70f152ff4be5198c614a93d1434d4e3a4017d54634ef2779535e6989a09e51a00aceb19c92f",
+            "eth_address": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+            "eth_private_key": "0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a",
             "courses": [
                 "CS201",
                 "CS302",
@@ -27,11 +27,11 @@
             "role": "student"
         },
         {
-            "student_id": "2024003",
+            "student_id": "2023116103",
             "name": "王五",
-            "password_hash": "scrypt:32768:8:1$60OYvmYI1yw43jXZ$cf09a0252c38229e7adc76f0ade26470df4df41409c52cf1c17d89f42341f9e1ee63ea57ac3a459fcb482e224e2b02921fb7bc42dbe58f247c0d409080b4ecc5",
-            "eth_address": "0xCbB8fB71C084eD7399D8cEC686ab5F1C874F1e43",
-            "eth_private_key": "0x0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6",
+            "password_hash": "scrypt:32768:8:1$iKr3bT9OUhy1lDgd$8d3e50ecb48ac75b5bdd38e35e4fd32d27dc1566f71a1ed89e53a4e68ce0f2b7de448ced349c8d71ddd71093fe21ee7170ebc2995ad332889205f220c5c9c832",
+            "eth_address": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+            "eth_private_key": "0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6",
             "courses": [
                 "CS301",
                 "CS302",
@@ -42,12 +42,21 @@
         {
             "student_id": "admin",
             "name": "管理员",
-            "password_hash": "scrypt:32768:8:1$bmCAQnUBcN98YPIl$64f4d2dcd03e013c0bdb21c60c8c54a6332eeafb37bca0421015b671b26efbe8bbe897bbb17fd18413b191bdb16055b15a390b5308d581428615bb4e40cc84fb",
-            "eth_address": "0xfB76384E0B70F567C002dBcFf32B8b17715B0118",
-            "eth_private_key": "0x0x47e179ec197488593b187f80a00eb0da91f1b9d0b13f8733639f19c30a34926a",
+            "password_hash": "scrypt:32768:8:1$xIGw69YcBri1cDbS$8ad2b3a84e8a4f5774c4002637761c4ad0bc21b3434d6572b9b93e177f2e9c976278d87f052cfc444aadeb445c57a9b1ba99246336047d061c6683da94536327",
+            "eth_address": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65",
+            "eth_private_key": "0x47e179ec197488593b187f80a00eb0da91f1b9d0b13f8733639f19c30a34926a",
             "courses": [],
             "role": "admin"
+        },
+        {
+            "student_id": "2023116100",
+            "name": "谢傲宇",
+            "password_hash": "scrypt:32768:8:1$J6XYKwUjVbLTPSoS$80ee6852a2db0a44465eccfb4cfe070d665842b2212c72a9055c98587a548286f3b9ad8c5832062d018e3fd90c0ebbcce700500f1882690a7326326e1e642766",
+            "eth_address": "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc",
+            "eth_private_key": "0x8b3a350cf5c34c9194ca85829a2df0ec3153be0318b5e2d3348e872092edffba",
+            "courses": [],
+            "role": "student"
         }
     ],
-    "_注释": "password_hash 和 eth_address/eth_private_key 会在首次 init_users 时自动填充"
+    "_注释": "学号格式: 10位数字"
 }

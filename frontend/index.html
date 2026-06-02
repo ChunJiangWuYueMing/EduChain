@@ -1,13 +1,3675 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>EduChain — 校园学习资料可信交换平台</title>
-  <link rel="icon" type="image/png" href="/images/educhain_main_logo_icon.png" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#312e81">
+    <title>EduChain — 校园学习资料可信交换平台</title>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-light: #6366f1;
+            --primary-bg: #eef2ff;
+            --success: #059669;
+            --success-bg: #ecfdf5;
+            --danger: #dc2626;
+            --danger-bg: #fef2f2;
+            --warning: #d97706;
+            --warning-bg: #fffbeb;
+            --bg: #f1f5f9;
+            --card: #fff;
+            --text: #1e293b;
+            --text-secondary: #64748b;
+            --text-muted: #94a3b8;
+            --border: #e2e8f0;
+            --radius: 14px;
+            --shadow: 0 10px 24px rgba(15,23,42,.06), 0 4px 10px rgba(15,23,42,.04);
+            --shadow-md: 0 18px 36px rgba(15,23,42,.10), 0 8px 18px rgba(15,23,42,.06);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: "Segoe UI Variable", "PingFang SC", "Microsoft YaHei", sans-serif;
+            background: var(--bg); color: var(--text); min-height: 100vh; line-height: 1.6;
+            font-size: 16px;
+            overflow-x: hidden;
+        }
+
+        /* Navbar */
+        .navbar {
+            background: linear-gradient(135deg, #312e81, #4f46e5);
+            color: #fff; padding: 0 28px; display: flex; align-items: center;
+            min-height: 64px; position: sticky; top: 0; z-index: 100; gap: 20px;
+            box-shadow: 0 2px 8px rgba(79,70,229,.25);
+        }
+        .navbar .logo {
+            font-size: 29px; font-weight: 800; letter-spacing: -.4px; cursor: pointer;
+            white-space: nowrap; user-select: none;
+        }
+        .navbar .logo span { color: #c7d2fe; font-weight: 500; font-size: 16px; margin-left: 8px; }
+        .nav-links { display: flex; gap: 6px; flex: 1; }
+        .nav-links a, .nav-links button {
+            color: rgba(255,255,255,.86); text-decoration: none; padding: 11px 16px;
+            border-radius: 10px; font-size: 16px; border: none; background: none; cursor: pointer;
+            transition: all .15s; font-weight: 600; white-space: nowrap;
+        }
+        .nav-links a:hover, .nav-links button:hover { color: #fff; background: rgba(255,255,255,.12); }
+        .nav-links a.active { color: #fff; background: rgba(255,255,255,.18); font-weight: 600; }
+        .user-area { display: flex; align-items: center; gap: 12px; font-size: 15px; white-space: nowrap; }
+        .user-area .user-badge {
+            background: rgba(255,255,255,.15); padding: 7px 14px; border-radius: 999px;
+            font-size: 14px; display: flex; align-items: center; gap: 6px;
+        }
+        .user-area .user-badge .dot { width: 7px; height: 7px; border-radius: 50%; background: #34d399; }
+        .btn-nav {
+            color: #fff; padding: 9px 16px; border-radius: 10px; font-size: 14px; cursor: pointer;
+            border: 1px solid rgba(255,255,255,.3); background: transparent; font-weight: 500;
+            transition: all .15s;
+        }
+        .btn-nav:hover { background: rgba(255,255,255,.15); }
+
+        /* Main container */
+        .container { width: min(94vw, 1480px); margin: 32px auto 44px; padding: 0 18px; }
+        .page { display: none; animation: fadeIn .2s ease; }
+        .page.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Cards */
+        .card {
+            background: var(--card); border-radius: var(--radius); padding: 28px 30px;
+            box-shadow: var(--shadow); margin-bottom: 16px; border: 1px solid var(--border);
+        }
+        .card::after {
+            content: "";
+            display: block;
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            pointer-events: none;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,.72);
+        }
+        .card { position: relative; overflow: hidden; }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; gap: 16px; }
+        .card-header h2 { font-size: 30px; font-weight: 800; color: var(--text); }
+        .card-header p { font-size: 16px; color: var(--text-secondary); }
+
+        /* Form */
+        .form-group { margin-bottom: 18px; }
+        .form-group label { display: block; font-size: 15px; font-weight: 700; margin-bottom: 7px; color: var(--text-secondary); }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%; padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px;
+            font-size: 15px; transition: all .15s; background: #fafbfc;
+        }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79,70,229,.1); background: #fff;
+        }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+        /* Buttons */
+        .btn {
+            padding: 11px 20px; border: none; border-radius: 10px; font-size: 15px; cursor: pointer;
+            font-weight: 600; transition: all .15s; display: inline-flex; align-items: center; gap: 6px;
+        }
+        .btn:hover { transform: translateY(-1px); }
+        .btn:active { transform: translateY(0); }
+        .btn-primary { background: var(--primary); color: #fff; box-shadow: 0 2px 4px rgba(79,70,229,.3); }
+        .btn-primary:hover { background: var(--primary-light); box-shadow: 0 4px 8px rgba(79,70,229,.35); }
+        .btn-success { background: var(--success); color: #fff; box-shadow: 0 2px 4px rgba(5,150,105,.25); }
+        .btn-success:hover { box-shadow: 0 4px 8px rgba(5,150,105,.3); }
+        .btn-danger { background: var(--danger); color: #fff; }
+        .btn-outline { background: #fff; border: 1px solid var(--border); color: var(--text); }
+        .btn-outline:hover { background: #f8fafc; border-color: #cbd5e1; }
+        .btn-sm { padding: 7px 12px; font-size: 13px; }
+        .btn-xs { padding: 5px 10px; font-size: 12px; border-radius: 6px; }
+        .btn:disabled { opacity: .5; cursor: not-allowed; pointer-events: none; }
+
+        /* Table */
+        .table-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 15px; }
+        th, td { padding: 14px 16px; text-align: left; border-bottom: 1px solid var(--border); }
+        th { font-weight: 700; color: var(--text-secondary); font-size: 12px; text-transform: uppercase; letter-spacing: .6px; background: #f8fafc; }
+        tr:hover td { background: #f8fafc; }
+
+        /* Badges & Tags */
+        .badge { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+        .badge-green { background: var(--success-bg); color: var(--success); }
+        .badge-blue { background: var(--primary-bg); color: var(--primary); }
+        .badge-red { background: var(--danger-bg); color: var(--danger); }
+        .badge-yellow { background: var(--warning-bg); color: var(--warning); }
+        .tag { display: inline-block; background: var(--primary-bg); color: var(--primary); padding: 4px 10px; border-radius: 8px; font-size: 13px; margin: 1px; font-weight: 600; }
+
+        /* Alerts */
+        .alert { padding: 13px 16px; border-radius: 10px; margin-bottom: 16px; font-size: 15px; border-left: 4px solid; }
+        .alert-success { background: var(--success-bg); color: #065f46; border-color: var(--success); }
+        .alert-error { background: var(--danger-bg); color: #991b1b; border-color: var(--danger); }
+        .alert-info { background: var(--primary-bg); color: #3730a3; border-color: var(--primary); }
+
+        /* Misc */
+        .loading, .empty { color: var(--text-muted); text-align: center; padding: 64px 0; font-size: 16px; }
+        .loading::before { content: ''; display: block; width: 28px; height: 28px; border: 3px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin .7s linear infinite; margin: 0 auto 12px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .mono { font-family: "SF Mono", "Fira Code", "Consolas", monospace; font-size: 13px; word-break: break-all; }
+        .section-title { font-size: 24px; font-weight: 800; margin-bottom: 16px; }
+        .subtle-note { font-size: 14px; color: var(--text-secondary); }
+        .soft-panel {
+            background: linear-gradient(180deg, rgba(238,242,255,.76), rgba(255,255,255,.96));
+            border: 1px solid #dbe4ff;
+            border-radius: 18px;
+            padding: 18px 20px;
+        }
+        .page-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.15fr) minmax(320px, .85fr);
+            gap: 18px;
+            align-items: start;
+        }
+        .stack-md { display: grid; gap: 16px; }
+        .empty-state {
+            display: grid;
+            justify-items: center;
+            gap: 10px;
+            padding: 76px 20px;
+            text-align: center;
+        }
+        .empty-state strong { font-size: 22px; color: var(--text); }
+        .empty-state p { max-width: 520px; color: var(--text-secondary); font-size: 15px; }
+        .hero-tip {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: var(--primary-bg);
+            color: var(--primary);
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: 700;
+        }
+        .page-hero {
+            display: grid;
+            gap: 20px;
+            margin-bottom: 22px;
+            padding: 28px 30px;
+            border-radius: 26px;
+            border: 1px solid rgba(219, 228, 255, .92);
+            background:
+                radial-gradient(circle at top right, rgba(99,102,241,.18), transparent 32%),
+                linear-gradient(135deg, rgba(255,255,255,.98) 0%, rgba(242,247,255,.98) 100%);
+            box-shadow: 0 24px 50px rgba(72,101,155,.12), 0 8px 18px rgba(15,23,42,.05);
+        }
+        .page-hero-copy {
+            max-width: 760px;
+        }
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            padding: 8px 14px;
+            border-radius: 999px;
+            background: rgba(79,70,229,.08);
+            color: var(--primary);
+            font-size: 13px;
+            font-weight: 800;
+            letter-spacing: .04em;
+        }
+        .page-hero h1 {
+            margin-top: 14px;
+            font-size: clamp(32px, 4vw, 54px);
+            line-height: 1.06;
+            letter-spacing: -.04em;
+        }
+        .page-hero p {
+            margin-top: 12px;
+            max-width: 760px;
+            color: var(--text-secondary);
+            font-size: 17px;
+        }
+        .hero-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px;
+        }
+        .hero-panel {
+            min-height: 108px;
+            padding: 18px 20px;
+            border-radius: 20px;
+            background: rgba(255,255,255,.74);
+            border: 1px solid rgba(201,210,255,.82);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,.72);
+        }
+        .hero-panel strong {
+            display: block;
+            font-size: 18px;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+        .hero-panel span {
+            color: var(--text-secondary);
+            font-size: 15px;
+        }
+        .search-bar { display: flex; gap: 12px; margin-bottom: 18px; }
+        .search-bar input { flex: 1; }
+        .search-bar input, .search-bar select { padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px; font-size: 15px; }
+        .search-bar input:focus, .search-bar select:focus { outline: none; border-color: var(--primary); }
+        .search-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        .filter-pill-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
+        .filter-pill {
+            display: inline-flex;
+            align-items: center;
+            min-height: 36px;
+            padding: 8px 14px;
+            border-radius: 999px;
+            background: #eef4ff;
+            color: #274690;
+            font-size: 14px;
+            font-weight: 700;
+        }
+        .filter-hint {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+        .market-search-card,
+        .market-results-card {
+            background: linear-gradient(180deg, rgba(255,255,255,.98) 0%, rgba(248,250,255,.98) 100%);
+        }
+        .market-results-card {
+            min-height: 360px;
+        }
+        .pagination { display: flex; justify-content: center; gap: 8px; margin-top: 18px; }
+        .detail-grid { display: grid; grid-template-columns: 140px 1fr; gap: 12px 14px; font-size: 15px; }
+        .detail-grid dt { color: var(--text-secondary); font-weight: 700; font-size: 14px; }
+        .detail-grid dd { word-break: break-all; }
+        .mobile-list { display: grid; gap: 12px; }
+        .mobile-item {
+            background: #fff; border: 1px solid var(--border); border-radius: 12px;
+            padding: 14px; box-shadow: var(--shadow);
+        }
+        .mobile-item-header {
+            display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+        }
+        .mobile-item-title { font-size: 17px; font-weight: 700; }
+        .mobile-item-subtitle { margin-top: 4px; color: var(--text-secondary); font-size: 13px; }
+        .mobile-meta { display: grid; gap: 8px; margin-top: 14px; }
+        .mobile-kv {
+            display: flex; justify-content: space-between; gap: 14px; font-size: 14px;
+        }
+        .mobile-kv span:first-child { color: var(--text-secondary); }
+        .mobile-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+
+        /* Upload area */
+        .file-upload-area {
+            border: 2px dashed var(--border); border-radius: var(--radius); padding: 56px;
+            text-align: center; cursor: pointer; transition: all .2s;
+            background: linear-gradient(180deg, #fbfdff 0%, #f5f8ff 100%);
+        }
+        .file-upload-area:hover, .file-upload-area.drag-over { border-color: var(--primary); background: var(--primary-bg); }
+        .file-upload-area input { display: none; }
+        .upload-layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1.18fr) minmax(300px, .82fr);
+            gap: 18px;
+            align-items: start;
+        }
+        .upload-side {
+            display: grid;
+            gap: 18px;
+        }
+        .upload-drop-title {
+            color: var(--text);
+            font-size: 24px;
+            font-weight: 800;
+            letter-spacing: -.02em;
+        }
+        .upload-drop-subtitle {
+            color: var(--text-secondary);
+            font-size: 15px;
+        }
+        .info-card {
+            background: linear-gradient(180deg, rgba(255,255,255,.98) 0%, rgba(244,247,255,.98) 100%);
+        }
+        .info-card h3 {
+            font-size: 22px;
+            font-weight: 800;
+            margin-bottom: 10px;
+        }
+        .info-card p {
+            color: var(--text-secondary);
+            font-size: 15px;
+        }
+        .info-card strong {
+            color: var(--text);
+        }
+
+        /* Stats bar */
+        .stats-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-bottom: 22px; }
+        .stat-card { background: var(--card); border-radius: var(--radius); padding: 20px 18px; box-shadow: var(--shadow); border: 1px solid var(--border); text-align: center; }
+        .stat-card .stat-value { font-size: 38px; font-weight: 800; color: var(--primary); }
+        .stat-card .stat-label { font-size: 14px; color: var(--text-secondary); margin-top: 6px; }
+
+        /* Wallet */
+        .wallet-header { display: flex; align-items: center; gap: 18px; margin-bottom: 22px; }
+        .wallet-avatar {
+            width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), #7c3aed);
+            color: #fff; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 700;
+        }
+        .balance-big { font-size: 44px; font-weight: 800; color: var(--primary); line-height: 1; }
+        .wallet-balance-label { font-size: 13px; color: var(--text-secondary); margin-bottom: 6px; }
+        .wallet-summary-name { font-size: 22px; font-weight: 800; }
+        .wallet-summary-id { font-size: 14px; color: var(--text-secondary); margin-top: 3px; }
+        #wallet-name { display: block; font-size: 22px !important; font-weight: 800; }
+        #wallet-sid { font-size: 14px !important; color: var(--text-secondary) !important; margin-top: 3px; }
+        .wallet-main-grid {
+            display: grid;
+            grid-template-columns: minmax(420px, .9fr) minmax(380px, 1.1fr);
+            gap: 18px;
+            align-items: stretch;
+        }
+        #wallet-content {
+            display: grid;
+            gap: 18px;
+            align-items: start;
+        }
+        .copy-row {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 8px;
+            align-items: center;
+            width: 100%;
+        }
+        .copy-row .mono {
+            min-width: 0;
+        }
+        .copy-btn {
+            min-height: 34px;
+            padding: 7px 10px;
+            border-radius: 8px;
+            white-space: nowrap;
+        }
+        .material-detail-grid {
+            display: grid;
+            grid-template-columns: 96px minmax(0, 1fr);
+            gap: 10px 14px;
+            font-size: 14px;
+        }
+        .material-detail-grid dt {
+            color: var(--text-secondary);
+            font-weight: 700;
+        }
+        .material-detail-grid dd {
+            min-width: 0;
+            word-break: break-all;
+        }
+        #wallet-content h2 {
+            font-size: 24px !important;
+            margin-bottom: 16px !important;
+            font-weight: 800;
+        }
+        #page-audit .form-row {
+            grid-template-columns: 1fr 1fr auto;
+            align-items: end;
+        }
+        #page-audit .form-row .form-group:last-child {
+            display: flex !important;
+            gap: 8px !important;
+            align-self: end !important;
+        }
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px;
+        }
+        .status-item {
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 16px 18px;
+        }
+        .status-item-label {
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: .04em;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+        .status-item-value { font-size: 16px; color: var(--text); }
+        .status-item-value strong { font-size: 26px; }
+        .audit-toolbar {
+            display: grid;
+            grid-template-columns: 1fr 1fr auto;
+            gap: 16px;
+            margin-bottom: 16px;
+            align-items: end;
+        }
+        .audit-summary {
+            margin-bottom: 14px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+        .result-card {
+            margin-top: 18px;
+            padding: 22px;
+            border-radius: 16px;
+            background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(248,250,252,.98));
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+        }
+        .result-card h3 { font-size: 24px; margin-bottom: 18px; }
+        .timeline-block { margin-top: 18px; }
+        .timeline-block h4 { font-size: 18px; margin-bottom: 10px; }
+        .file-input-compact { padding: 10px !important; }
+        .muted-inline { font-size: 13px; color: var(--text-muted); margin-top: 8px; }
+        .status-summary-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 14px;
+            margin-bottom: 18px;
+        }
+        .status-summary-card {
+            padding: 18px 20px;
+            border-radius: 18px;
+            border: 1px solid rgba(201,210,255,.82);
+            background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(244,247,255,.98));
+            box-shadow: inset 0 1px 0 rgba(255,255,255,.72);
+        }
+        .status-summary-card span {
+            display: block;
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: .04em;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+        .status-summary-card strong {
+            display: block;
+            font-size: 34px;
+            line-height: 1;
+            letter-spacing: -.04em;
+        }
+        #status-content .detail-grid {
+            max-width: 1040px;
+            grid-template-columns: 180px minmax(0, 1fr);
+            gap: 14px 20px;
+            align-items: center;
+        }
+        #status-content .detail-grid dd {
+            min-height: 52px;
+            display: flex;
+            align-items: center;
+            padding: 14px 16px;
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+        }
+        #verify-result .detail-grid dd {
+            min-height: 48px;
+            display: flex;
+            align-items: center;
+            padding: 12px 14px;
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+        }
+        #verify-result .keyword-cell {
+            align-items: flex-start;
+            overflow: visible;
+        }
+        .keyword-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            width: 100%;
+            min-width: 0;
+        }
+        .keyword-chip {
+            display: inline-flex;
+            align-items: center;
+            max-width: 100%;
+            white-space: nowrap;
+            word-break: keep-all;
+            overflow-wrap: normal;
+        }
+        #audit-result .table-wrap,
+        #tx-history .table-wrap {
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            background: #fff;
+        }
+        #page-upload .card,
+        #page-wallet > .card,
+        #wallet-content > .card,
+        #page-status .card {
+            box-shadow: 0 22px 52px rgba(72,101,155,.12), 0 8px 18px rgba(15,23,42,.06);
+        }
+        #page-market .stats-row .stat-card,
+        #page-status .status-summary-card {
+            box-shadow: 0 18px 40px rgba(72,101,155,.12), 0 6px 16px rgba(15,23,42,.05);
+        }
+        #page-upload .card {
+            background: linear-gradient(180deg, rgba(255,255,255,.98) 0%, rgba(249,251,255,.98) 100%);
+        }
+        #page-upload .file-upload-area {
+            min-height: 180px;
+            display: grid;
+            align-content: center;
+            justify-items: center;
+            gap: 8px;
+        }
+        #page-upload #file-placeholder {
+            color: var(--text) !important;
+            font-size: 24px;
+            font-weight: 800;
+            letter-spacing: -.02em;
+        }
+        #page-upload .file-upload-area p:last-child {
+            font-size: 15px !important;
+            color: var(--text-secondary) !important;
+        }
+        #page-upload #file-name {
+            font-size: 20px;
+        }
+        #wallet-content > .card:first-child {
+            background:
+                radial-gradient(circle at top right, rgba(99,102,241,.16), transparent 34%),
+                linear-gradient(135deg, #ffffff 0%, #f8faff 100%);
+        }
+        #wallet-content > .card:nth-child(2) {
+            background:
+                linear-gradient(180deg, rgba(255,255,255,.98) 0%, rgba(243,247,255,.98) 100%);
+            border-color: #dce6ff;
+        }
+        #wallet-content > .card:last-child {
+            min-height: 320px;
+        }
+        #wallet-content .wallet-avatar {
+            box-shadow: 0 16px 32px rgba(79,70,229,.22);
+        }
+        #wallet-content .detail-grid dd {
+            background: rgba(255,255,255,.76);
+            border: 1px solid rgba(148,163,184,.18);
+            border-radius: 14px;
+            padding: 12px 14px;
+            min-height: 52px;
+            display: flex;
+            align-items: center;
+        }
+        #wallet-content .detail-grid dt {
+            padding-top: 14px;
+        }
+        #wallet-content > .card:nth-child(2) .btn-primary {
+            width: 100%;
+            justify-content: center;
+        }
+        #tx-history .empty-state,
+        #wallet-login-prompt .empty-state {
+            min-height: 220px;
+        }
+        #status-content .detail-grid dd:nth-of-type(1),
+        #status-content .detail-grid dd:nth-of-type(2),
+        #status-content .detail-grid dd:nth-of-type(4),
+        #status-content .detail-grid dd:nth-of-type(9),
+        #status-content .detail-grid dd:nth-of-type(10) {
+            background: linear-gradient(180deg, #ffffff 0%, #f5f8ff 100%);
+        }
+        #status-content .detail-grid dd:nth-of-type(4),
+        #status-content .detail-grid dd:nth-of-type(9),
+        #status-content .detail-grid dd:nth-of-type(10) {
+            box-shadow: inset 0 0 0 1px rgba(99,102,241,.14);
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(15,23,42,.5); backdrop-filter: blur(2px);
+            display: flex; align-items: center; justify-content: center; z-index: 200;
+        }
+        .modal {
+            background: var(--card); border-radius: 18px; padding: 32px; max-width: 500px; width: 90%;
+            max-height: 85vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,.15);
+        }
+        .modal h3 { font-size: 24px; margin-bottom: 22px; }
+        .modal-footer { text-align: center; font-size: 14px; color: var(--text-secondary); margin-top: 16px; }
+
+        /* Toast */
+        .toast-container { position: fixed; top: 80px; right: 20px; z-index: 300; display: flex; flex-direction: column; gap: 8px; }
+        .toast {
+            padding: 13px 18px; border-radius: 10px; font-size: 14px; font-weight: 600; color: #fff;
+            box-shadow: 0 8px 24px rgba(0,0,0,.18); animation: slideIn .25s ease; max-width: 380px;
+        }
+        .toast-success { background: #059669; }
+        .toast-error { background: #dc2626; }
+        .toast-info { background: #4f46e5; }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: translateX(0); } }
+
+        @media (min-width: 769px) {
+            body {
+                font-size: 18px;
+                background:
+                    radial-gradient(circle at top left, rgba(99,102,241,.10), transparent 28%),
+                    linear-gradient(180deg, #f8fbff 0%, #eef4fb 100%);
+            }
+            .navbar {
+                position: fixed;
+                top: 0;
+                left: 0;
+                bottom: 0;
+                width: 272px;
+                min-height: 100vh;
+                padding: 26px 18px;
+                display: grid;
+                grid-template-rows: auto 1fr auto;
+                align-items: start;
+                gap: 22px;
+                border-right: 1px solid rgba(255,255,255,.12);
+                box-shadow: 18px 0 40px rgba(49,46,129,.18);
+            }
+            .navbar .logo {
+                font-size: 40px;
+                line-height: 1.05;
+                white-space: normal;
+            }
+            .navbar .logo span {
+                display: block;
+                margin: 10px 0 0;
+                font-size: 18px;
+                color: rgba(199,210,254,.92);
+            }
+            .nav-links {
+                display: grid;
+                gap: 8px;
+                align-content: start;
+            }
+            .nav-links a, .nav-links button {
+                min-height: 52px;
+                padding: 14px 18px;
+                border-radius: 14px;
+                font-size: 18px;
+                text-align: left;
+            }
+            .user-area {
+                display: grid;
+                gap: 10px;
+                align-items: stretch;
+            }
+            .user-area #user-display,
+            .user-area .btn-nav,
+            .user-area .user-badge {
+                width: 100%;
+            }
+            .btn-nav {
+                min-height: 46px;
+                justify-content: center;
+                font-size: 15px;
+            }
+            .container {
+                width: auto;
+                margin: 0 28px 0 300px;
+                padding: 28px 24px 40px;
+            }
+            .page {
+                max-width: none;
+            }
+            .card {
+                padding: 34px 36px;
+                border-radius: 22px;
+            }
+            .card-header {
+                margin-bottom: 28px;
+            }
+            .card-header h2 {
+                font-size: 44px;
+                line-height: 1.08;
+            }
+            .card-header p {
+                font-size: 19px;
+                max-width: 640px;
+            }
+            .form-group label {
+                font-size: 17px;
+                margin-bottom: 10px;
+            }
+            .form-group input, .form-group select, .form-group textarea,
+            .search-bar input, .search-bar select {
+                min-height: 58px;
+                padding: 14px 18px;
+                font-size: 18px;
+                border-radius: 14px;
+            }
+            .btn {
+                min-height: 52px;
+                padding: 12px 22px;
+                font-size: 17px;
+                border-radius: 14px;
+            }
+            .btn-sm {
+                min-height: 42px;
+                font-size: 15px;
+            }
+            .btn-xs {
+                min-height: 36px;
+                font-size: 14px;
+            }
+            .stats-row {
+                gap: 18px;
+                margin-bottom: 24px;
+            }
+            .page-hero {
+                padding: 34px 36px;
+                border-radius: 30px;
+                margin-bottom: 24px;
+            }
+            .page-hero p {
+                font-size: 19px;
+            }
+            .hero-panel {
+                min-height: 122px;
+                padding: 20px 22px;
+                border-radius: 22px;
+            }
+            .hero-panel strong {
+                font-size: 20px;
+            }
+            .hero-panel span {
+                font-size: 16px;
+            }
+            .stat-card {
+                padding: 24px 20px;
+                border-radius: 18px;
+            }
+            .stat-card .stat-value {
+                font-size: 46px;
+            }
+            .stat-card .stat-label {
+                font-size: 16px;
+            }
+            .filter-pill {
+                min-height: 40px;
+                padding: 8px 16px;
+                font-size: 15px;
+            }
+            .filter-hint {
+                font-size: 15px;
+            }
+            .upload-drop-title {
+                font-size: 28px;
+            }
+            .upload-drop-subtitle,
+            .info-card p {
+                font-size: 16px;
+            }
+            #page-upload #file-placeholder {
+                font-size: 28px;
+            }
+            .status-summary-card {
+                padding: 20px 22px;
+            }
+            .status-summary-card strong {
+                font-size: 40px;
+            }
+            .section-title {
+                font-size: 30px;
+            }
+            .empty-state {
+                min-height: 340px;
+                padding: 90px 24px;
+            }
+            .empty-state strong {
+                font-size: 40px;
+            }
+            .empty-state p {
+                font-size: 18px;
+                max-width: 720px;
+            }
+            .hero-tip {
+                font-size: 15px;
+                padding: 10px 14px;
+            }
+            .detail-grid {
+                grid-template-columns: 180px 1fr;
+                gap: 16px 18px;
+                font-size: 17px;
+            }
+            .detail-grid dt {
+                font-size: 16px;
+            }
+            #status-content .detail-grid {
+                max-width: none;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 18px;
+            }
+            #status-content .detail-grid dt {
+                display: none;
+            }
+            #status-content .detail-grid dd {
+                min-height: 126px;
+                display: block;
+                padding: 22px 24px;
+                border-radius: 18px;
+                background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+                box-shadow: inset 0 0 0 1px var(--border);
+            }
+            #status-content .detail-grid dd::before {
+                display: block;
+                font-size: 14px;
+                font-weight: 800;
+                letter-spacing: .04em;
+                text-transform: uppercase;
+                color: var(--text-secondary);
+                margin-bottom: 16px;
+            }
+            #status-content .detail-grid dd:nth-of-type(1)::before { content: "后端服务"; }
+            #status-content .detail-grid dd:nth-of-type(2)::before { content: "本地区块链网络"; }
+            #status-content .detail-grid dd:nth-of-type(3)::before { content: "网络地址"; }
+            #status-content .detail-grid dd:nth-of-type(4)::before { content: "当前区块"; }
+            #status-content .detail-grid dd:nth-of-type(5)::before { content: "部署账户"; }
+            #status-content .detail-grid dd:nth-of-type(6)::before { content: "积分合约"; }
+            #status-content .detail-grid dd:nth-of-type(7)::before { content: "资料登记合约"; }
+            #status-content .detail-grid dd:nth-of-type(8)::before { content: "下载记录合约"; }
+            #status-content .detail-grid dd:nth-of-type(9)::before { content: "资料总数"; }
+            #status-content .detail-grid dd:nth-of-type(10)::before { content: "下载记录"; }
+            #status-content .detail-grid dd:nth-of-type(11)::before { content: "链路错误"; }
+            #status-content .detail-grid dd strong {
+                font-size: 36px;
+                line-height: 1.1;
+            }
+            #status-content .detail-grid dd .mono {
+                font-size: 15px;
+            }
+            #verify-result .detail-grid dd {
+                min-height: 56px;
+                padding: 14px 16px;
+            }
+            .table-wrap table {
+                font-size: 16px;
+            }
+            th {
+                font-size: 13px;
+            }
+        }
+
+        @media (max-width: 1200px) {
+            .stats-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .card-header h2 { font-size: 25px; }
+            .page-grid { grid-template-columns: 1fr; }
+            .upload-layout,
+            .status-summary-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (min-width: 769px) and (max-width: 1200px) {
+            .navbar {
+                width: 236px;
+                padding: 22px 14px;
+            }
+            .navbar .logo {
+                font-size: 34px;
+            }
+            .navbar .logo span {
+                font-size: 16px;
+            }
+            .nav-links a, .nav-links button {
+                font-size: 16px;
+                padding: 12px 14px;
+            }
+            .container {
+                margin-left: 254px;
+                padding: 24px 18px 36px;
+            }
+            .card-header h2 {
+                font-size: 36px;
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .navbar { flex-wrap: wrap; height: auto; padding: 12px 16px; gap: 10px; }
+            .navbar .logo { width: 100%; font-size: 22px; }
+            .navbar .logo span { font-size: 14px; margin-left: 6px; }
+            .nav-links, .user-area { display: flex; width: 100%; }
+            .nav-links {
+                order: 3; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding-top: 6px;
+            }
+            .nav-links a, .nav-links button {
+                width: 100%; min-height: 48px; padding: 12px 14px; font-size: 14px; text-align: center;
+            }
+            .user-area {
+                order: 4; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: stretch; gap: 8px;
+            }
+            #user-display {
+                grid-column: 1 / -1;
+                width: 100%;
+            }
+            .btn-nav, .user-badge {
+                width: 100%;
+            }
+            .btn-nav {
+                min-height: 42px; display: inline-flex; align-items: center; justify-content: center;
+            }
+            .container {
+                margin: 18px auto 28px; padding: 0 14px;
+            }
+            .page-hero {
+                padding: 20px 18px;
+                border-radius: 22px;
+            }
+            .page-hero p {
+                font-size: 15px;
+            }
+            .hero-grid,
+            .upload-layout,
+            .status-summary-grid {
+                grid-template-columns: 1fr;
+            }
+            .hero-panel {
+                min-height: auto;
+            }
+            .card {
+                padding: 18px;
+            }
+            .card-header {
+                flex-direction: column; align-items: flex-start; gap: 6px;
+            }
+            .card-header h2 { font-size: 22px; }
+            .card-header p { font-size: 14px; }
+            .form-row, .form-row-3 { grid-template-columns: 1fr; }
+            .search-bar { flex-direction: column; }
+            .search-meta {
+                align-items: flex-start;
+            }
+            .filter-pill-row {
+                width: 100%;
+            }
+            .detail-grid { grid-template-columns: 1fr; }
+            .detail-grid dt { margin-top: 8px; }
+            .stats-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .status-grid { grid-template-columns: 1fr; }
+            .audit-toolbar { grid-template-columns: 1fr; }
+            #wallet-content { grid-template-columns: 1fr; }
+            #wallet-content > .card:first-child,
+            #wallet-content > .card:last-child,
+            #wallet-content > .card:nth-child(2) {
+                grid-column: auto;
+                grid-row: auto;
+            }
+            #page-audit .form-row { grid-template-columns: 1fr; }
+            #status-content .detail-grid { grid-template-columns: 1fr; }
+            .wallet-header {
+                align-items: flex-start; flex-wrap: wrap;
+            }
+            .wallet-header > div:last-child {
+                width: 100%; margin-left: 0 !important; text-align: left !important; padding-top: 4px;
+            }
+            .balance-big { font-size: 32px; }
+            .file-upload-area { padding: 28px 16px; }
+            .upload-drop-title {
+                font-size: 20px;
+            }
+            .upload-drop-subtitle {
+                font-size: 14px;
+            }
+            #page-upload #file-placeholder {
+                font-size: 20px;
+            }
+            .pagination { justify-content: flex-start; flex-wrap: wrap; }
+            .toast-container {
+                left: 14px; right: 14px; top: 76px;
+            }
+            .toast { max-width: none; }
+            .modal {
+                width: 100%; padding: 24px 18px; border-radius: 12px;
+            }
+            .empty-state { padding: 52px 12px; }
+            .empty-state strong { font-size: 20px; }
+            .section-title { font-size: 20px; }
+        }
+
+        /* SaaS redesign layer */
+        :root {
+            --space-1: 8px;
+            --space-2: 16px;
+            --space-3: 24px;
+            --space-4: 32px;
+            --space-5: 40px;
+            --radius: 16px;
+            --primary: #635bff;
+            --primary-light: #7c3aed;
+            --primary-bg: rgba(99,91,255,.10);
+            --brand-gradient: linear-gradient(135deg, #2563eb 0%, #635bff 48%, #8b5cf6 100%);
+            --bg: #f7f8fc;
+            --card: rgba(255,255,255,.74);
+            --text: #101828;
+            --text-secondary: #667085;
+            --text-muted: #98a2b3;
+            --border: rgba(148,163,184,.24);
+            --glass-border: rgba(255,255,255,.62);
+            --shadow: 0 18px 44px rgba(16,24,40,.08);
+            --shadow-md: 0 24px 70px rgba(50,50,93,.14), 0 8px 24px rgba(15,23,42,.08);
+        }
+        body {
+            background:
+                radial-gradient(circle at 18% 8%, rgba(37,99,235,.16), transparent 28%),
+                radial-gradient(circle at 78% 12%, rgba(139,92,246,.16), transparent 30%),
+                linear-gradient(180deg, #fbfcff 0%, #eef2ff 46%, #f8fafc 100%);
+            color: var(--text);
+            letter-spacing: 0;
+        }
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            background-image:
+                linear-gradient(rgba(99,102,241,.055) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(99,102,241,.055) 1px, transparent 1px);
+            background-size: 48px 48px;
+            mask-image: linear-gradient(to bottom, rgba(0,0,0,.8), transparent 70%);
+            z-index: -1;
+        }
+        .navbar {
+            background: rgba(255,255,255,.58);
+            color: var(--text);
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(24px) saturate(150%);
+            -webkit-backdrop-filter: blur(24px) saturate(150%);
+        }
+        .navbar .logo {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            color: var(--text);
+            font-size: 20px;
+            font-weight: 800;
+        }
+        .brand-mark {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: inline-grid;
+            place-items: center;
+            color: #fff;
+            background: var(--brand-gradient);
+            box-shadow: 0 14px 30px rgba(99,91,255,.30);
+            flex: 0 0 auto;
+        }
+        .brand-mark svg { width: 20px; height: 20px; }
+        .brand-copy {
+            display: grid;
+            gap: 2px;
+            line-height: 1.1;
+        }
+        .brand-copy small {
+            color: var(--text-secondary);
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .nav-links a,
+        .nav-links button,
+        .btn-nav {
+            color: var(--text-secondary);
+            border-radius: 12px;
+            gap: 10px;
+        }
+        .nav-links a {
+            display: flex;
+            align-items: center;
+            border: 1px solid transparent;
+        }
+        .nav-links a svg,
+        .btn-nav svg {
+            width: 18px;
+            height: 18px;
+            flex: 0 0 auto;
+        }
+        .nav-links a:hover,
+        .nav-links button:hover,
+        .btn-nav:hover {
+            color: var(--text);
+            background: rgba(255,255,255,.72);
+            border-color: rgba(99,91,255,.14);
+            box-shadow: 0 10px 28px rgba(16,24,40,.08);
+            transform: translateY(-1px);
+        }
+        .nav-links a.active {
+            color: #fff;
+            background: var(--brand-gradient);
+            border-color: rgba(255,255,255,.36);
+            box-shadow: 0 16px 36px rgba(99,91,255,.26);
+        }
+        .user-area #user-display,
+        .user-area .user-badge {
+            color: var(--text);
+            background: rgba(255,255,255,.72);
+            border: 1px solid rgba(148,163,184,.22);
+            border-radius: 14px;
+            padding: 10px 12px;
+            font-size: 13px;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,.7);
+        }
+        .btn-nav {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255,255,255,.56);
+            border: 1px solid rgba(148,163,184,.24);
+            color: var(--text);
+            min-height: 40px;
+        }
+        .container {
+            width: auto;
+        }
+        .page-hero {
+            position: relative;
+            overflow: hidden;
+            min-height: 0;
+            grid-template-columns: minmax(0, 1.15fr) minmax(300px, .85fr);
+            align-items: stretch;
+            padding: var(--space-3);
+            margin-bottom: var(--space-3);
+            border-radius: 16px;
+            background:
+                linear-gradient(135deg, rgba(255,255,255,.82), rgba(255,255,255,.52)),
+                radial-gradient(circle at 82% 10%, rgba(99,91,255,.24), transparent 38%);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--shadow-md);
+            backdrop-filter: blur(22px) saturate(160%);
+            -webkit-backdrop-filter: blur(22px) saturate(160%);
+        }
+        .page-hero::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, rgba(37,99,235,.12), rgba(139,92,246,.12));
+            opacity: .55;
+            pointer-events: none;
+        }
+        .page-hero > * {
+            position: relative;
+            z-index: 1;
+        }
+        .page-hero h1 {
+            margin-top: var(--space-2);
+            max-width: 760px;
+            font-size: 28px;
+            line-height: 1.02;
+            letter-spacing: 0;
+        }
+        .page-hero p {
+            margin-top: 12px;
+            max-width: 700px;
+            color: #475467;
+            font-size: 16px;
+            line-height: 1.65;
+        }
+        .eyebrow,
+        .hero-tip {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            min-height: 32px;
+            padding: 6px 12px;
+            background: rgba(99,91,255,.10);
+            color: #4f46e5;
+            border: 1px solid rgba(99,91,255,.14);
+        }
+        .eyebrow svg,
+        .hero-tip svg {
+            width: 15px;
+            height: 15px;
+        }
+        .hero-grid {
+            gap: var(--space-2);
+        }
+        .hero-panel {
+            min-height: 112px;
+            padding: var(--space-2);
+            border-radius: 16px;
+            background: rgba(255,255,255,.64);
+            border: 1px solid rgba(255,255,255,.72);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,.82), 0 12px 34px rgba(16,24,40,.08);
+            transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+        }
+        .hero-panel:hover {
+            transform: translateY(-3px);
+            border-color: rgba(99,91,255,.28);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,.82), 0 20px 44px rgba(99,91,255,.14);
+        }
+        .hero-panel-icon {
+            width: 36px;
+            height: 36px;
+            display: grid;
+            place-items: center;
+            margin-bottom: 12px;
+            color: #fff !important;
+            border-radius: 12px;
+            background: var(--brand-gradient);
+            box-shadow: 0 12px 26px rgba(99,91,255,.24);
+        }
+        .hero-panel-icon svg {
+            width: 18px;
+            height: 18px;
+        }
+        .card,
+        .market-search-card,
+        .market-results-card,
+        .info-card,
+        .status-summary-card,
+        .modal {
+            border-radius: 16px;
+            background: rgba(255,255,255,.72);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(18px) saturate(145%);
+            -webkit-backdrop-filter: blur(18px) saturate(145%);
+            transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+        }
+        .card:hover,
+        .stat-card:hover,
+        .status-summary-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 24px 64px rgba(50,50,93,.13), 0 10px 24px rgba(15,23,42,.08);
+            border-color: rgba(99,91,255,.22);
+        }
+        .stats-row {
+            gap: var(--space-2);
+            margin-bottom: var(--space-3);
+        }
+        .stat-card {
+            position: relative;
+            overflow: hidden;
+            display: grid;
+            grid-template-columns: 44px minmax(0, 1fr);
+            gap: var(--space-2);
+            align-items: center;
+            min-height: 116px;
+            padding: var(--space-2);
+            text-align: left;
+            border-radius: 16px;
+            background: rgba(255,255,255,.76);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(18px);
+        }
+        .stat-card::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(37,99,235,.10), rgba(139,92,246,.08));
+            opacity: 0;
+            transition: opacity .18s ease;
+        }
+        .stat-card:hover::before { opacity: 1; }
+        .stat-icon {
+            position: relative;
+            z-index: 1;
+            width: 44px;
+            height: 44px;
+            display: grid;
+            place-items: center;
+            color: #fff;
+            border-radius: 14px;
+            background: var(--brand-gradient);
+            box-shadow: 0 12px 28px rgba(99,91,255,.26);
+        }
+        .stat-icon svg { width: 21px; height: 21px; }
+        .stat-body { position: relative; z-index: 1; }
+        .stat-card .stat-label {
+            margin-top: 0;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-secondary);
+            letter-spacing: 0;
+        }
+        .stat-card .stat-value {
+            margin-top: 4px;
+            color: var(--text);
+            font-size: 30px;
+            line-height: 1;
+            letter-spacing: 0;
+        }
+        .btn {
+            min-height: 40px;
+            border-radius: 12px;
+            transition: transform .18s ease, box-shadow .18s ease, background .18s ease;
+        }
+        .btn-primary {
+            background: var(--brand-gradient);
+            box-shadow: 0 14px 30px rgba(99,91,255,.24);
+        }
+        .btn-outline {
+            background: rgba(255,255,255,.70);
+            border-color: rgba(148,163,184,.28);
+        }
+        input,
+        select,
+        textarea,
+        .search-bar input,
+        .search-bar select {
+            border-radius: 12px !important;
+            background: rgba(255,255,255,.72) !important;
+            border-color: rgba(148,163,184,.26) !important;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,.72);
+        }
+        table {
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+        th {
+            background: rgba(248,250,252,.74);
+            letter-spacing: 0;
+        }
+        tr:hover td {
+            background: rgba(99,91,255,.045);
+        }
+        .badge,
+        .tag,
+        .filter-pill {
+            border-radius: 8px;
+        }
+        .toast {
+            border-radius: 16px;
+            backdrop-filter: blur(16px);
+        }
+        @media (min-width: 769px) {
+            body { font-size: 16px; }
+            .navbar {
+                width: 240px;
+                padding: var(--space-3) var(--space-2);
+                box-shadow: 18px 0 50px rgba(50,50,93,.10);
+            }
+            .navbar .logo {
+                font-size: 20px;
+                white-space: normal;
+            }
+            .navbar .logo span { margin: 0; }
+            .nav-links a,
+            .nav-links button {
+                min-height: 44px;
+                padding: 10px 12px;
+                font-size: 14px;
+            }
+            .container {
+                margin: 0 24px 0 264px;
+                padding: var(--space-3) 0 var(--space-5);
+            }
+            .card {
+                padding: var(--space-3);
+            }
+            .card-header h2 {
+                font-size: 26px;
+                line-height: 1.16;
+                letter-spacing: 0;
+            }
+            .card-header p {
+                font-size: 15px;
+            }
+            .page-hero {
+                max-height: none;
+            }
+        }
+        @media (max-width: 768px) {
+            .navbar {
+                background: rgba(255,255,255,.78);
+                color: var(--text);
+                backdrop-filter: blur(18px);
+            }
+            .navbar .logo {
+                width: 100%;
+                font-size: 18px;
+            }
+            .nav-links a {
+                justify-content: center;
+                font-size: 13px;
+            }
+            .nav-links a svg { display: none; }
+            .page-hero {
+                grid-template-columns: 1fr;
+                padding: var(--space-2);
+            }
+            .page-hero h1 {
+                font-size: 32px;
+            }
+            .stats-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Product dashboard refinement layer */
+        :root {
+            --space-1: 8px;
+            --space-2: 14px;
+            --space-3: 20px;
+            --space-4: 28px;
+            --radius: 12px;
+            --primary: #4f46e5;
+            --primary-light: #4338ca;
+            --primary-bg: #eef2ff;
+            --brand-gradient: #4f46e5;
+            --bg: #f6f7fb;
+            --card: #ffffff;
+            --text: #111827;
+            --text-secondary: #64748b;
+            --text-muted: #94a3b8;
+            --border: #e5e7eb;
+            --glass-border: #e5e7eb;
+            --shadow: 0 1px 2px rgba(15,23,42,.04);
+            --shadow-md: 0 12px 28px rgba(15,23,42,.07);
+        }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-size: 15px;
+        }
+        body::before { display: none; }
+        .navbar {
+            background: #fff;
+            color: var(--text);
+            border: 0;
+            border-right: 1px solid var(--border);
+            box-shadow: none;
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
+        }
+        .navbar .logo {
+            gap: 10px;
+            font-size: 18px;
+        }
+        .brand-mark {
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            background: var(--primary);
+            box-shadow: none;
+        }
+        .brand-copy small {
+            color: var(--text-muted);
+            font-size: 11px;
+        }
+        .brand-copy,
+        .brand-copy small {
+            white-space: nowrap;
+        }
+        .nav-links { gap: 4px; }
+        .nav-links a,
+        .nav-links button,
+        .btn-nav {
+            border-radius: 8px;
+            color: var(--text-secondary);
+            font-size: 14px;
+            box-shadow: none;
+        }
+        .nav-links a:hover,
+        .nav-links button:hover,
+        .btn-nav:hover {
+            background: #f8fafc;
+            border-color: transparent;
+            color: var(--text);
+            box-shadow: none;
+            transform: none;
+        }
+        .nav-links a.active {
+            background: var(--primary-bg);
+            color: var(--primary);
+            border-color: transparent;
+            box-shadow: none;
+        }
+        .user-area {
+            align-items: stretch;
+        }
+        .user-area #user-display,
+        .user-area .user-badge,
+        .btn-nav {
+            background: #fff;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            box-shadow: none;
+        }
+        .container {
+            max-width: 1280px;
+        }
+        .page-hero {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: var(--space-3);
+            align-items: center;
+            padding: var(--space-3);
+            margin-bottom: var(--space-3);
+            border-radius: var(--radius);
+            background: #fff;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
+        }
+        .page-hero::before { display: none; }
+        .page-hero h1 {
+            margin-top: 8px;
+            max-width: 760px;
+            font-size: 28px;
+            line-height: 1.2;
+            font-weight: 750;
+        }
+        .page-hero p {
+            margin-top: 6px;
+            max-width: 720px;
+            color: var(--text-secondary);
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        .eyebrow,
+        .hero-tip {
+            min-height: 26px;
+            padding: 4px 9px;
+            border-radius: 7px;
+            font-size: 12px;
+            background: var(--primary-bg);
+            border: 1px solid #dbe4ff;
+            color: var(--primary);
+        }
+        .hero-grid {
+            width: min(420px, 38vw);
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+        }
+        .hero-panel {
+            min-height: 82px;
+            padding: 12px;
+            border-radius: 10px;
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            box-shadow: none;
+            transition: none;
+        }
+        .hero-panel:hover {
+            transform: none;
+            border-color: var(--border);
+            box-shadow: none;
+        }
+        .hero-panel strong {
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+        .hero-panel span {
+            font-size: 12px;
+            line-height: 1.45;
+        }
+        .card,
+        .market-search-card,
+        .market-results-card,
+        .info-card,
+        .status-summary-card,
+        .modal,
+        .stat-card {
+            border-radius: var(--radius);
+            background: #fff;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
+            transition: none;
+        }
+        .card:hover,
+        .stat-card:hover,
+        .status-summary-card:hover {
+            transform: none;
+            box-shadow: var(--shadow);
+            border-color: var(--border);
+        }
+        #page-upload .card,
+        #page-wallet > .card,
+        #wallet-content > .card,
+        #page-status .card,
+        #page-market .stats-row .stat-card,
+        #page-status .status-summary-card {
+            box-shadow: var(--shadow);
+        }
+        #wallet-login-prompt .empty-state {
+            min-height: 140px;
+            padding: 36px 16px;
+        }
+        #wallet-login-prompt .empty-state strong {
+            font-size: 24px;
+            line-height: 1.25;
+        }
+        #wallet-login-prompt .empty-state p {
+            font-size: 14px;
+            max-width: 620px;
+        }
+        .card::after { display: none; }
+        .card-header {
+            align-items: flex-start;
+            margin-bottom: var(--space-3);
+        }
+        .card-header h2 {
+            font-size: 22px;
+            line-height: 1.25;
+            font-weight: 750;
+        }
+        .card-header p {
+            margin-top: 3px;
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+        .stats-row {
+            gap: 12px;
+            margin-bottom: var(--space-3);
+        }
+        .stat-card {
+            min-height: 86px;
+            grid-template-columns: 36px minmax(0, 1fr);
+            gap: 12px;
+            padding: 14px;
+            text-align: left;
+        }
+        .stat-card::before { display: none; }
+        .stat-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 9px;
+            background: var(--primary-bg);
+            color: var(--primary);
+            box-shadow: none;
+        }
+        .stat-icon svg {
+            width: 18px;
+            height: 18px;
+        }
+        .stat-card .stat-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        .stat-card .stat-value {
+            font-size: 24px;
+            color: var(--text);
+        }
+        .btn {
+            min-height: 38px;
+            border-radius: 8px;
+            padding: 9px 14px;
+            font-size: 14px;
+            box-shadow: none;
+        }
+        .btn:hover { transform: none; }
+        .btn-primary {
+            background: var(--primary);
+            color: #fff;
+            box-shadow: none;
+        }
+        .btn-primary:hover {
+            background: var(--primary-light);
+            box-shadow: none;
+        }
+        .btn-outline {
+            background: #fff;
+            border-color: var(--border);
+            color: var(--text);
+        }
+        input,
+        select,
+        textarea,
+        .search-bar input,
+        .search-bar select {
+            min-height: 38px;
+            border-radius: 8px !important;
+            background: #fff !important;
+            border-color: var(--border) !important;
+            box-shadow: none;
+            font-size: 14px;
+        }
+        th, td {
+            padding: 12px 14px;
+            font-size: 14px;
+        }
+        th {
+            background: #f8fafc;
+            color: #667085;
+            font-size: 12px;
+        }
+        tr:hover td { background: #f9fafb; }
+        .badge,
+        .tag,
+        .filter-pill {
+            border-radius: 7px;
+            font-size: 12px;
+        }
+        .file-upload-area {
+            padding: 34px;
+            background: #fbfcff;
+            border-radius: var(--radius);
+        }
+        #page-upload #file-placeholder {
+            font-size: 18px;
+            font-weight: 700;
+        }
+        .upload-layout,
+        #wallet-content,
+        .trust-layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1.1fr) minmax(300px, .9fr);
+            gap: var(--space-3);
+            align-items: start;
+        }
+        .trust-layout .card,
+        .upload-side .card {
+            margin-bottom: 0;
+        }
+        .trust-panel {
+            display: grid;
+            gap: 12px;
+        }
+        .empty-compact {
+            padding: 28px 16px;
+            border: 1px dashed var(--border);
+            border-radius: 10px;
+            background: #f8fafc;
+            color: var(--text-secondary);
+            text-align: center;
+        }
+        .empty-compact strong {
+            display: block;
+            margin-bottom: 4px;
+            color: var(--text);
+            font-size: 16px;
+        }
+        .result-panel {
+            margin-top: 16px;
+            padding: 16px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: #fbfcff;
+        }
+        .login-guide-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+            margin-top: 14px;
+        }
+        .login-guide-card {
+            padding: 14px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: #f8fafc;
+            text-align: left;
+        }
+        .login-guide-card strong {
+            display: block;
+            margin-bottom: 4px;
+            font-size: 14px;
+        }
+        .login-guide-card span {
+            color: var(--text-secondary);
+            font-size: 13px;
+        }
+        .trust-kpi {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: #f8fafc;
+        }
+        .trust-kpi span {
+            color: var(--text-secondary);
+            font-size: 12px;
+        }
+        .trust-kpi strong {
+            font-size: 14px;
+        }
+        .step-list {
+            display: grid;
+            gap: 10px;
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+        .step-list li {
+            display: grid;
+            grid-template-columns: 28px minmax(0, 1fr);
+            gap: 10px;
+            align-items: start;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: #f8fafc;
+        }
+        .step-list b {
+            display: grid;
+            place-items: center;
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            background: var(--primary-bg);
+            color: var(--primary);
+            font-size: 13px;
+        }
+        .step-list strong {
+            display: block;
+            font-size: 14px;
+            margin-bottom: 2px;
+        }
+        .step-list span {
+            color: var(--text-secondary);
+            font-size: 13px;
+        }
+        .wallet-page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: var(--space-3);
+            padding: var(--space-3);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            background: #fff;
+            box-shadow: var(--shadow);
+        }
+        .wallet-page-header h1 {
+            font-size: 28px;
+            line-height: 1.2;
+        }
+        .wallet-page-header p {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-top: 4px;
+        }
+        .balance-big {
+            font-size: 34px;
+            color: var(--primary);
+        }
+        .wallet-avatar {
+            width: 52px;
+            height: 52px;
+            background: var(--primary);
+            box-shadow: none !important;
+        }
+        .status-summary-card {
+            padding: 14px;
+            border-radius: 10px;
+        }
+        .status-summary-card strong {
+            font-size: 24px;
+        }
+        .status-table {
+            margin-top: 16px;
+        }
+        .status-table td:nth-child(2) {
+            max-width: 520px;
+        }
+        @media (min-width: 769px) {
+            .navbar {
+                width: 224px;
+                padding: var(--space-3) 12px;
+            }
+            .container {
+                max-width: 1180px;
+                margin: 0 auto 0 248px;
+                padding: var(--space-3) 0 var(--space-5);
+            }
+            .card { padding: var(--space-3); }
+        }
+        @media (max-width: 1100px) {
+            .page-hero,
+            .upload-layout,
+            #wallet-content,
+            .trust-layout {
+                grid-template-columns: 1fr;
+            }
+            .hero-grid { width: 100%; }
+        }
+        @media (max-width: 768px) {
+            .navbar {
+                border-right: 0;
+                border-bottom: 1px solid var(--border);
+                background: #fff;
+            }
+            .container {
+                margin: 14px auto 28px;
+                padding: 0 12px;
+            }
+            .page-hero,
+            .wallet-page-header {
+                padding: 16px;
+            }
+            .page-hero h1,
+            .wallet-page-header h1 {
+                font-size: 24px;
+            }
+            .hero-grid,
+            .stats-row,
+            .status-summary-grid,
+            .login-guide-grid {
+                grid-template-columns: 1fr;
+            }
+            .user-area #user-display {
+                display: none;
+            }
+            .user-area {
+                gap: 8px;
+            }
+            .card-header {
+                flex-direction: column;
+                gap: 4px;
+            }
+        }
+
+        /* Wallet usability fixes */
+        #wallet-content {
+            grid-template-columns: 1fr !important;
+        }
+        .wallet-main-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: var(--space-3, 20px);
+            align-items: start;
+        }
+        .wallet-main-grid > .card {
+            min-width: 0;
+            margin-bottom: 0;
+        }
+        .wallet-main-grid .form-row {
+            grid-template-columns: minmax(0, 1fr) minmax(180px, .6fr);
+        }
+        .copy-row {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 8px;
+            align-items: center;
+            width: 100%;
+        }
+        .copy-row .mono {
+            min-width: 0;
+            overflow-wrap: anywhere;
+        }
+        .copy-btn {
+            min-height: 34px;
+            padding: 7px 10px;
+            border-radius: 8px;
+            white-space: nowrap;
+        }
+        @media (min-width: 1500px) {
+            .wallet-main-grid {
+                grid-template-columns: minmax(420px, .95fr) minmax(420px, 1.05fr);
+            }
+        }
+        @media (max-width: 768px) {
+            .wallet-main-grid .form-row,
+            .copy-row {
+                grid-template-columns: 1fr;
+            }
+            .copy-btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+        /* Mobile compact navigation fix */
+        @media (max-width: 768px) {
+            .navbar {
+                position: sticky !important;
+                top: 0;
+                display: grid !important;
+                grid-template-columns: 1fr;
+                gap: 8px !important;
+                padding: 10px 12px !important;
+                min-height: 0 !important;
+            }
+            .navbar .logo {
+                width: auto !important;
+                min-height: 38px;
+                font-size: 18px !important;
+            }
+            .brand-mark {
+                width: 34px !important;
+                height: 34px !important;
+                border-radius: 9px !important;
+            }
+            .brand-copy {
+                font-size: 18px !important;
+            }
+            .brand-copy small {
+                font-size: 12px !important;
+            }
+            .nav-links {
+                order: initial !important;
+                display: flex !important;
+                grid-template-columns: none !important;
+                width: 100% !important;
+                gap: 6px !important;
+                padding: 0 0 4px !important;
+                overflow-x: auto;
+                scrollbar-width: none;
+                -webkit-overflow-scrolling: touch;
+            }
+            .nav-links::-webkit-scrollbar {
+                display: none;
+            }
+            .nav-links a,
+            .nav-links button {
+                width: auto !important;
+                min-width: max-content;
+                min-height: 34px !important;
+                padding: 7px 12px !important;
+                border-radius: 8px !important;
+                font-size: 13px !important;
+                line-height: 1.2;
+                text-align: center;
+            }
+            .user-area {
+                order: initial !important;
+                display: flex !important;
+                grid-template-columns: none !important;
+                width: 100% !important;
+                gap: 8px !important;
+            }
+            .user-area #user-display {
+                display: none !important;
+            }
+            .btn-nav {
+                width: auto !important;
+                min-height: 34px !important;
+                padding: 7px 12px !important;
+                border-radius: 8px !important;
+                font-size: 13px !important;
+            }
+            .container {
+                margin-top: 12px !important;
+            }
+        }
+
+        /* Mobile app typography and account bar */
+        @media (max-width: 768px) {
+            body {
+                font-size: 15px !important;
+                line-height: 1.55 !important;
+            }
+
+            .navbar {
+                grid-template-columns: minmax(0, 1fr) auto !important;
+                align-items: center !important;
+                row-gap: 6px !important;
+                column-gap: 10px !important;
+                padding: 9px 12px 8px !important;
+            }
+
+            .navbar .logo {
+                grid-column: 1 !important;
+                grid-row: 1 !important;
+                min-width: 0 !important;
+                min-height: 34px !important;
+            }
+
+            .brand-mark {
+                width: 32px !important;
+                height: 32px !important;
+            }
+
+            .brand-copy {
+                font-size: 17px !important;
+                line-height: 1.1 !important;
+            }
+
+            .brand-copy small,
+            .navbar .logo span {
+                font-size: 11px !important;
+                line-height: 1.2 !important;
+            }
+
+            .user-area {
+                grid-column: 2 !important;
+                grid-row: 1 !important;
+                justify-content: flex-end !important;
+                align-items: center !important;
+                width: auto !important;
+                gap: 6px !important;
+                min-width: max-content;
+            }
+
+            .nav-links {
+                grid-column: 1 / -1 !important;
+                grid-row: 2 !important;
+                margin-top: 2px !important;
+                padding: 0 0 2px !important;
+            }
+
+            .nav-links a,
+            .nav-links button {
+                flex: 0 0 auto !important;
+                min-height: 32px !important;
+                padding: 6px 10px !important;
+                border-radius: 8px !important;
+                font-size: 14px !important;
+                font-weight: 700 !important;
+                white-space: nowrap !important;
+                word-break: keep-all !important;
+                overflow-wrap: normal !important;
+            }
+
+            .btn-nav {
+                min-height: 32px !important;
+                padding: 6px 10px !important;
+                border-radius: 8px !important;
+                font-size: 13px !important;
+                font-weight: 700 !important;
+            }
+
+            .container {
+                width: 100% !important;
+                margin-top: 10px !important;
+                padding: 0 12px !important;
+            }
+
+            .page-hero,
+            .card {
+                border-radius: 12px !important;
+                padding: 18px 20px !important;
+                margin-bottom: 12px !important;
+            }
+
+            .page-hero {
+                gap: 12px !important;
+            }
+
+            .page-hero h1 {
+                font-size: 24px !important;
+                line-height: 1.25 !important;
+                letter-spacing: 0 !important;
+                margin-bottom: 6px !important;
+            }
+
+            .page-hero p,
+            .card-header p,
+            .subtle-note {
+                font-size: 14px !important;
+                line-height: 1.65 !important;
+            }
+
+            .card-header {
+                gap: 8px !important;
+                margin-bottom: 16px !important;
+            }
+
+            .card-header h2,
+            .section-title {
+                font-size: 22px !important;
+                line-height: 1.3 !important;
+                letter-spacing: 0 !important;
+            }
+
+            .soft-panel {
+                padding: 14px 16px !important;
+                border-radius: 10px !important;
+            }
+
+            .soft-panel strong,
+            .mobile-item-title {
+                font-size: 16px !important;
+                line-height: 1.35 !important;
+            }
+
+            .form-group label {
+                font-size: 14px !important;
+            }
+
+            .form-group input,
+            .form-group select,
+            .form-group textarea {
+                min-height: 44px !important;
+                font-size: 15px !important;
+                border-radius: 9px !important;
+            }
+
+            .btn {
+                min-height: 40px !important;
+                padding: 9px 14px !important;
+                border-radius: 9px !important;
+                font-size: 14px !important;
+            }
+        }
+
+    </style>
 </head>
 <body>
-  <div id="app"></div>
-  <script type="module" src="/src/main.js"></script>
+    <nav class="navbar" id="app-navbar">
+        <div class="logo" onclick="navigate('market')">EduChain<span>校园资料链</span></div>
+        <div class="nav-links" id="nav-links">
+            <a href="#market" data-page="market" class="active">资料广场</a>
+            <a href="#upload" data-page="upload">发布资料</a>
+            <a href="#verify" data-page="verify">真伪校验</a>
+            <a href="#wallet" data-page="wallet">积分账户</a>
+            <a href="#audit" data-page="audit">审计追溯</a>
+            <a href="#status" data-page="status">系统状态</a>
+        </div>
+        <div class="user-area" id="user-area">
+            <span id="user-display" style="font-size:12px;color:rgba(255,255,255,.7);">未登录</span>
+            <button class="btn-nav" onclick="showLoginModal()" id="btn-login">登录</button>
+            <button class="btn-nav" onclick="showRegisterModal()" id="btn-register">注册</button>
+            <button class="btn-nav" onclick="logout()" id="btn-logout" style="display:none">退出</button>
+        </div>
+    </nav>
+
+    <div class="toast-container" id="toast-container"></div>
+
+    <div class="container">
+        <!-- Page: Market -->
+        <div class="page active" id="page-market">
+            <section class="page-hero">
+                <div class="page-hero-copy">
+                    <span class="eyebrow">资料广场</span>
+                    <h1>校园资料共享与可信验证平台</h1>
+                    <p>支持资料上传、链上存证、积分激励、真伪校验与审计追溯。</p>
+                </div>
+                <div class="hero-grid">
+                    <div class="hero-panel">
+                        <strong>资料检索</strong>
+                        <span>按资料名称、课程代码和课程名称快速查找。</span>
+                    </div>
+                    <div class="hero-panel">
+                        <strong>链上可信</strong>
+                        <span>展示文件指纹、访问权限和链上记录状态。</span>
+                    </div>
+                </div>
+            </section>
+            <div class="stats-row" id="market-stats"></div>
+            <div class="card market-search-card">
+                <div class="card-header"><h2>资料广场</h2><p>发现同学分享的优质学习资料</p></div>
+                <div class="search-bar">
+                    <input type="text" id="search-input" placeholder="搜索资料名称、课程代码或课程名（如：数据结构 / CS201）...">
+                    <select id="course-filter">
+                        <option value="">全部课程</option>
+                        <option value="CS201">CS201 数据结构</option>
+                        <option value="CS301">CS301 操作系统</option>
+                        <option value="CS302">CS302 计算机网络</option>
+                        <option value="MATH101">MATH101 高等数学</option>
+                        <option value="PHY101">PHY101 大学物理</option>
+                    </select>
+                </div>
+                <div class="search-meta">
+                    <div id="market-filter-summary" class="filter-pill-row">
+                        <span class="filter-hint">当前查看全部课程，输入关键词后会自动清空旧课程筛选。</span>
+                    </div>
+                    <button type="button" class="btn btn-outline" onclick="resetMarketFilters()">清空筛选</button>
+                </div>
+            </div>
+            <div class="card market-results-card">
+                <div class="card-header"><h2>资料列表</h2><p>资料完成存证后会在这里展示，支持查看和下载。</p></div>
+                <div id="material-list"><div class="loading">加载中...</div></div>
+                <div class="pagination" id="pagination"></div>
+            </div>
+        </div>
+
+        <!-- Page: Upload -->
+        <div class="page" id="page-upload">
+            <section class="page-hero">
+                <div class="page-hero-copy">
+                    <span class="eyebrow">发布资料</span>
+                    <h1>发布学习资料</h1>
+                    <p>选择资料文件，填写课程信息，设置下载价格和访问权限，提交后完成链上存证。</p>
+                </div>
+                <div class="hero-grid">
+                    <div class="hero-panel">
+                        <strong>上传资料获得积分</strong>
+                        <span>资料登记成功后发放 +20 EDU 积分。</span>
+                    </div>
+                    <div class="hero-panel">
+                        <strong>文件指纹（SHA-256）</strong>
+                        <span>同时生成内容相似度（SimHash）用于后续校验。</span>
+                    </div>
+                </div>
+            </section>
+            <div class="upload-layout">
+            <div class="card">
+                <div class="card-header"><h2>三步发布</h2><p>选择文件、填写资料信息、设置价格与权限。</p></div>
+                <div id="upload-alert"></div>
+                <form id="upload-form" onsubmit="handleUpload(event)">
+                    <div class="file-upload-area" id="drop-area" onclick="document.getElementById('file-input').click()">
+                        <input type="file" id="file-input" onchange="onFileSelected(event)" accept=".pdf,.docx,.pptx,.txt,.md">
+                        <p id="file-placeholder" style="color:var(--text-secondary);">📁 选择资料文件或拖拽到此处</p>
+                        <p id="file-name" style="display:none; color: var(--primary); font-weight: 600;"></p>
+                        <p style="font-size:12px; color: var(--text-muted); margin-top: 6px;">资料文件：支持 PDF、Word、PPT、TXT、Markdown（最大 50MB）</p>
+                    </div>
+                    <div class="form-row" style="margin-top: 16px;">
+                        <div class="form-group">
+                            <label>资料名称</label>
+                            <input type="text" name="name" placeholder="留空则使用文件名">
+                        </div>
+                        <div class="form-group">
+                            <label>所属课程</label>
+                            <select name="course" required>
+                                <option value="">请选择课程</option>
+                                <option value="CS201">CS201 数据结构</option>
+                                <option value="CS301">CS301 操作系统</option>
+                                <option value="CS302">CS302 计算机网络</option>
+                                <option value="MATH101">MATH101 高等数学</option>
+                                <option value="PHY101">PHY101 大学物理</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>资料简介</label>
+                        <textarea name="description" rows="3" placeholder="简要说明资料内容、适用章节或使用建议（可选）"></textarea>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>下载价格（EDU 积分）</label>
+                            <input type="number" name="price" value="5" min="0" max="100">
+                        </div>
+                        <div class="form-group">
+                            <label>访问权限</label>
+                            <select name="policy_type" id="policy-type" onchange="togglePolicyValue()">
+                                <option value="0">公开下载</option>
+                                <option value="1">仅本课程学生可下载</option>
+                                <option value="2">仅指定地址可下载</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group" id="policy-value-group" style="display:none;">
+                        <label>指定地址（逗号分隔）</label>
+                        <input type="text" name="policy_value" placeholder="0x..., 0x...">
+                    </div>
+                    <button type="submit" class="btn btn-primary" id="upload-btn" disabled>发布资料并完成存证</button>
+                </form>
+            </div>
+            <div class="upload-side">
+                <div class="card info-card">
+                    <h3>发布后会发生什么</h3>
+                    <ul class="step-list">
+                        <li><b>1</b><span><strong>文件入库</strong>保存资料并提取可验证文本。</span></li>
+                        <li><b>2</b><span><strong>生成文件指纹</strong>计算文件指纹（SHA-256）与内容相似度（SimHash）。</span></li>
+                        <li><b>3</b><span><strong>写入链上记录</strong>完成资料存证并发放 EDU 积分奖励。</span></li>
+                    </ul>
+                </div>
+                <div class="card info-card">
+                    <h3>更适合课堂演示</h3>
+                    <p>发布结果会展示资料 ID、文件指纹、文本长度和定价，方便你切到资料广场或校验页继续演示完整链路。</p>
+                </div>
+                <div class="card info-card">
+                    <h3>权限建议</h3>
+                    <p><strong>公开下载</strong> 适合通识笔记。<br><strong>仅本课程学生可下载</strong> 适合同班共享。<br><strong>仅指定地址可下载</strong> 适合实验材料定向分发。</p>
+                </div>
+            </div>
+            </div>
+        </div>
+
+        <!-- Page: Verify -->
+        <div class="page" id="page-verify">
+            <div class="trust-layout">
+                <div class="card">
+                    <div class="card-header"><h2>真伪校验</h2><p>上传文件与链上记录比对，判断资料是否被篡改。</p></div>
+                    <div id="verify-alert"></div>
+                    <form onsubmit="handleVerify(event)">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>资料 ID</label>
+                                <input type="text" id="verify-material-id" placeholder="MAT_..." required>
+                            </div>
+                            <div class="form-group">
+                                <label>待验证文件</label>
+                                <input type="file" id="verify-file" required class="file-input-compact">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">开始校验</button>
+                    </form>
+                    <div id="verify-result" class="result-panel">
+                        <div class="empty-compact"><strong>暂无校验结果</strong><span>请输入资料 ID 并上传待校验文件，系统将比对链上文件指纹。</span></div>
+                    </div>
+                </div>
+                <aside class="card trust-panel">
+                    <div class="card-header"><h2>校验规则</h2><p>用通俗指标解释链上可信逻辑。</p></div>
+                    <div class="trust-kpi"><span>完整性</span><strong>文件指纹是否一致</strong></div>
+                    <div class="trust-kpi"><span>内容相似度</span><strong>判断文本内容是否明显变化</strong></div>
+                    <div class="trust-kpi"><span>链上记录</span><strong>来自资料登记合约（MaterialRegistry）</strong></div>
+                    <ul class="step-list">
+                        <li><b>1</b><span><strong>输入资料 ID</strong>定位链上登记的原始指纹。</span></li>
+                        <li><b>2</b><span><strong>上传待校验文件</strong>本地重新计算文件指纹。</span></li>
+                        <li><b>3</b><span><strong>输出结论</strong>展示匹配、相似度和篡改风险。</span></li>
+                    </ul>
+                </aside>
+            </div>
+        </div>
+
+        <!-- Page: Audit -->
+        <div class="page" id="page-audit">
+            <div class="trust-layout">
+                <div class="card">
+                    <div class="card-header"><h2>审计追溯</h2><p>查询链上记录的下载、修改、删除行为，全链路不可篡改、可追溯</p></div>
+                    <div class="form-row" style="margin-bottom: 16px;">
+                        <div class="form-group">
+                            <label>资料 ID</label>
+                            <input type="text" id="audit-material-id" placeholder="MAT_...">
+                        </div>
+                        <div class="form-group">
+                            <label>下载者地址（可选）</label>
+                            <input type="text" id="audit-user-addr" placeholder="0x...">
+                        </div>
+                        <div class="form-group" style="align-self: flex-end; display: flex; gap: 6px;">
+                            <button class="btn btn-primary" onclick="loadAudit()">查询下载</button>
+                            <button class="btn btn-outline" onclick="loadFullAudit()">完整追溯</button>
+                        </div>
+                    </div>
+                    <div id="audit-result"><div class="empty-compact"><strong>暂无审计记录</strong><span>请输入资料 ID 或下载者地址查询链上行为。</span></div></div>
+                </div>
+                <aside class="card trust-panel">
+                    <div class="card-header"><h2>可追溯内容</h2><p>说明审计页能查询哪些链上行为。</p></div>
+                    <div class="trust-kpi"><span>下载记录</span><strong>谁下载了资料，何时下载</strong></div>
+                    <div class="trust-kpi"><span>版本记录</span><strong>资料是否更新，哈希是否变化</strong></div>
+                    <div class="trust-kpi"><span>删除记录</span><strong>谁执行删除，链上时间</strong></div>
+                    <ul class="step-list">
+                        <li><b>1</b><span><strong>按资料查</strong>查看某份资料的完整访问轨迹。</span></li>
+                        <li><b>2</b><span><strong>按地址查</strong>定位某个账户的下载行为。</span></li>
+                        <li><b>3</b><span><strong>完整追溯</strong>汇总上传、修改、下载和删除记录。</span></li>
+                    </ul>
+                </aside>
+            </div>
+        </div>
+
+        <!-- Page: Wallet -->
+        <div class="page" id="page-wallet">
+            <div class="wallet-page-header">
+                <div>
+                    <span class="eyebrow">积分账户</span>
+                    <h1>我的 EDU 积分</h1>
+                    <p>查看余额、账户地址、转账和资料共享带来的积分变化。</p>
+                </div>
+                <span class="hero-tip">积分账户</span>
+            </div>
+            <!-- logged-out message placeholder -->
+            <div id="wallet-login-prompt" class="card" style="text-align:center;">
+                <div class="empty-state">
+                    <span class="hero-tip">积分账户</span>
+                    <strong>登录后查看你的 EDU 积分</strong>
+                    <p>你可以查看上传奖励、下载支出、转账记录和资料收益。</p>
+                    <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
+                        <button class="btn btn-primary" onclick="showLoginModal()">登录</button>
+                        <button class="btn btn-outline" onclick="showRegisterModal()">注册新账号</button>
+                    </div>
+                    <div class="login-guide-grid">
+                        <div class="login-guide-card"><strong>上传资料获得积分</strong><span>发布资料完成存证后自动获得奖励。</span></div>
+                        <div class="login-guide-card"><strong>下载资料消耗积分</strong><span>下载同学资料时按价格扣减 EDU 积分。</span></div>
+                        <div class="login-guide-card"><strong>同学之间可以转账</strong><span>支持将 EDU 积分转给指定账户。</span></div>
+                    </div>
+                </div>
+            </div>
+            <!-- wallet content (hidden until login) -->
+            <div id="wallet-content" style="display:none;">
+                <div class="wallet-main-grid">
+                    <div class="card">
+                        <div class="wallet-header">
+                            <div class="wallet-avatar" id="wallet-avatar">--</div>
+                            <div>
+                                <strong style="font-size:16px;" id="wallet-name">--</strong>
+                                <div style="font-size:12px;color:var(--text-secondary);" id="wallet-sid">--</div>
+                            </div>
+                            <div style="margin-left:auto;text-align:right;">
+                                <div style="font-size:11px;color:var(--text-secondary);">当前积分</div>
+                                <div class="balance-big" id="wallet-balance">--</div>
+                            </div>
+                        </div>
+                        <div class="detail-grid" style="margin-top:12px;">
+                            <dt>账户地址</dt>
+                            <dd>
+                                <div class="copy-row">
+                                    <span class="mono" id="wallet-addr">--</span>
+                                    <button type="button" class="btn btn-xs btn-outline copy-btn" id="btn-copy-wallet-address" onclick="copyText('wallet-address', currentUser && currentUser.eth_address)">复制</button>
+                                </div>
+                            </dd>
+                            <dt>ETH 余额</dt><dd id="wallet-eth">--</dd>
+                            <dt>选修课程</dt><dd id="wallet-courses">--</dd>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h2 style="font-size:15px;margin-bottom:14px;">转账</h2>
+                        <div id="transfer-alert"></div>
+                        <form onsubmit="handleTransfer(event)">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>接收地址</label>
+                                    <input type="text" id="transfer-to" placeholder="0x..." required>
+                                </div>
+                                <div class="form-group">
+                                    <label>金额 (EDU)</label>
+                                    <input type="number" id="transfer-amount" value="1" min="1" required>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary">转账</button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2 style="font-size:15px;margin-bottom:14px;">转账记录</h2>
+                    <div id="tx-history"><div class="loading">加载中...</div></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Page: Status -->
+        <div class="page" id="page-status">
+            <section class="page-hero">
+                <div class="page-hero-copy">
+                    <span class="eyebrow">系统状态</span>
+                    <h1>系统运行状态</h1>
+                    <p>集中查看后端服务、本地区块链网络、当前区块和合约部署信息。</p>
+                </div>
+                <div class="hero-grid">
+                    <div class="hero-panel">
+                        <strong>健康检查</strong>
+                        <span>后端状态、链连接、区块高度会优先展示在最上方，适合答辩和演示快速说明。</span>
+                    </div>
+                    <div class="hero-panel">
+                        <strong>部署信息</strong>
+                        <span>本地区块链网络地址和三份合约地址集中展示，减少来回查找。</span>
+                    </div>
+                </div>
+            </section>
+            <div class="card">
+                <div class="card-header"><h2>实时链路概览</h2><p>后端运行状态、当前区块和合约部署信息都集中在这一屏。</p></div>
+                <div id="status-content"><div class="loading">加载中...</div></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Material Detail Modal -->
+    <div class="modal-overlay" id="material-detail-modal" style="display:none;" onclick="if(event.target===this) hideMaterialDetailModal()">
+        <div class="modal">
+            <h3>资料详情</h3>
+            <div id="material-detail-content"></div>
+            <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:18px;">
+                <button type="button" class="btn btn-primary" onclick="hideMaterialDetailModal()">确定</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div class="modal-overlay" id="login-modal" style="display:none;" onclick="if(event.target===this) hideLoginModal()">
+        <div class="modal">
+            <h3>登录 EduChain</h3>
+            <div id="login-alert"></div>
+            <form onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label>学号</label>
+                    <input type="text" id="login-sid" placeholder="例如: 2023116101" required>
+                </div>
+                <div class="form-group">
+                    <label>密码</label>
+                    <input type="password" id="login-pwd" placeholder="默认密码与学号相同" required>
+                </div>
+                <div style="display:flex;gap:8px;justify-content:flex-end;">
+                    <button type="button" class="btn btn-outline" onclick="hideLoginModal()">取消</button>
+                    <button type="submit" class="btn btn-primary">登录</button>
+                </div>
+            </form>
+            <div class="modal-footer">
+                测试账号: 2023116101-2023116103 (密码同学号) / admin (管理员)
+            </div>
+        </div>
+    </div>
+
+    <!-- Register Modal -->
+    <div class="modal-overlay" id="register-modal" style="display:none;" onclick="if(event.target===this) hideRegisterModal()">
+        <div class="modal">
+            <h3>注册新账户</h3>
+            <div id="register-alert"></div>
+            <form onsubmit="handleRegister(event)">
+                <div class="form-group">
+                    <label>学号</label>
+                    <input type="text" id="reg-sid" placeholder="10位数字，如 2023116101" required>
+                    <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">格式: 4位年份 + 3位学院 + 3位编号</div>
+                </div>
+                <div class="form-group">
+                    <label>姓名</label>
+                    <input type="text" id="reg-name" placeholder="真实姓名" required>
+                </div>
+                <div class="form-group">
+                    <label>密码</label>
+                    <input type="password" id="reg-pwd" placeholder="设置登录密码" required minlength="3">
+                </div>
+                <div style="display:flex;gap:8px;justify-content:flex-end;">
+                    <button type="button" class="btn btn-outline" onclick="hideRegisterModal()">取消</button>
+                    <button type="submit" class="btn btn-primary">注册</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="./market-filters.js"></script>
+    <script>
+        // ===== Global State =====
+        let currentUser = null;
+        let currentMarketPage = 1;
+
+        function isMobileViewport() {
+            return window.innerWidth <= 768;
+        }
+
+        function renderShellIcons() {
+            const logo = document.querySelector('.navbar .logo');
+            if (logo && !logo.dataset.modernized) {
+                logo.innerHTML = `
+                    <span class="brand-mark"><i data-lucide="blocks"></i></span>
+                    <span class="brand-copy">EduChain<small>校园可信资料平台</small></span>
+                `;
+                logo.dataset.modernized = '1';
+            }
+
+            const navMap = {
+                market: ['layout-dashboard', '资料广场'],
+                upload: ['cloud-upload', '发布资料'],
+                verify: ['shield-check', '真伪校验'],
+                wallet: ['wallet-cards', '积分账户'],
+                audit: ['scroll-text', '审计追溯'],
+                status: ['activity', '系统状态'],
+            };
+            document.querySelectorAll('.nav-links a').forEach(link => {
+                const item = navMap[link.dataset.page];
+                if (item && !link.dataset.modernized) {
+                    link.innerHTML = `<i data-lucide="${item[0]}"></i><span>${item[1]}</span>`;
+                    link.dataset.modernized = '1';
+                }
+            });
+
+            const buttonMap = {
+                'btn-login': ['log-in', '登录'],
+                'btn-register': ['user-plus', '注册'],
+                'btn-logout': ['log-out', '退出'],
+            };
+            Object.entries(buttonMap).forEach(([id, item]) => {
+                const button = document.getElementById(id);
+                if (button && !button.dataset.modernized) {
+                    button.innerHTML = `<i data-lucide="${item[0]}"></i><span>${item[1]}</span>`;
+                    button.dataset.modernized = '1';
+                }
+            });
+
+            const marketHero = document.querySelector('#page-market .page-hero');
+            if (marketHero && !marketHero.dataset.modernized) {
+                marketHero.innerHTML = `
+                    <div class="page-hero-copy">
+                        <span class="eyebrow"><i data-lucide="sparkles"></i> EduChain 工作台</span>
+                        <h1>校园资料共享与可信验证平台</h1>
+                        <p>支持资料上传、链上存证、积分激励、真伪校验与审计追溯。</p>
+                    </div>
+                    <div class="hero-grid">
+                        <div class="hero-panel">
+                            <span class="hero-panel-icon"><i data-lucide="fingerprint"></i></span>
+                            <strong>文件指纹（SHA-256）</strong>
+                            <span>精确校验文件是否与链上记录一致。</span>
+                        </div>
+                        <div class="hero-panel">
+                            <span class="hero-panel-icon"><i data-lucide="coins"></i></span>
+                            <strong>EDU 积分激励</strong>
+                            <span>上传奖励、下载支出和链上流水形成共享闭环。</span>
+                        </div>
+                    </div>
+                `;
+                marketHero.dataset.modernized = '1';
+            }
+
+            if (window.lucide) window.lucide.createIcons();
+        }
+        renderShellIcons();
+
+        window.addEventListener('resize', () => {
+            if (window.location.hash === '#market' || (!window.location.hash && document.getElementById('page-market').classList.contains('active'))) {
+                loadMaterials(currentMarketPage);
+            }
+        });
+
+        // ===== Toast =====
+        function toast(msg, type) {
+            type = type || 'info';
+            const container = document.getElementById('toast-container');
+            const el = document.createElement('div');
+            el.className = 'toast toast-' + type;
+            el.textContent = msg;
+            container.appendChild(el);
+            setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity .3s'; }, 2500);
+            setTimeout(() => el.remove(), 3000);
+        }
+
+        // ===== Router =====
+        function navigate(page) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
+
+            const target = document.getElementById('page-' + page);
+            if (target) target.classList.add('active');
+
+            const navLink = document.querySelector(`[data-page="${page}"]`);
+            if (navLink) navLink.classList.add('active');
+
+            window.location.hash = page;
+
+            if (page === 'market') { loadMarketStats(); loadMaterials(); }
+            if (page === 'wallet') loadWallet();
+            if (page === 'status') loadStatus();
+            renderShellIcons();
+        }
+
+        window.addEventListener('hashchange', () => {
+            const page = window.location.hash.replace('#', '') || 'market';
+            navigate(page);
+        });
+
+        // ===== Auth =====
+        async function checkSession() {
+            try {
+                const res = await fetch('/api/auth/me');
+                const json = await res.json();
+                if (json.code === 200 && json.data) {
+                    currentUser = json.data;
+                    updateUI();
+                }
+            } catch (e) { /* not logged in */ }
+        }
+
+        function showLoginModal() {
+            document.getElementById('login-modal').style.display = 'flex';
+            document.getElementById('login-alert').innerHTML = '';
+        }
+        function hideLoginModal() { document.getElementById('login-modal').style.display = 'none'; }
+
+        function showRegisterModal() {
+            document.getElementById('register-modal').style.display = 'flex';
+            document.getElementById('register-alert').innerHTML = '';
+        }
+        function hideRegisterModal() { document.getElementById('register-modal').style.display = 'none'; }
+
+        async function handleRegister(e) {
+            e.preventDefault();
+            const student_id = document.getElementById('reg-sid').value.trim();
+            const name = document.getElementById('reg-name').value.trim();
+            const password = document.getElementById('reg-pwd').value.trim();
+            const alertEl = document.getElementById('register-alert');
+
+            try {
+                const res = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ student_id, name, password })
+                });
+                const json = await res.json();
+                if (json.code === 200) {
+                    hideRegisterModal();
+                    toast('注册成功！请登录', 'success');
+                    document.getElementById('login-sid').value = student_id;
+                    showLoginModal();
+                } else {
+                    alertEl.innerHTML = `<div class="alert alert-error">${json.msg}</div>`;
+                }
+            } catch (e) {
+                alertEl.innerHTML = `<div class="alert alert-error">注册失败: ${e.message}</div>`;
+            }
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const student_id = document.getElementById('login-sid').value.trim();
+            const password = document.getElementById('login-pwd').value.trim();
+            const alertEl = document.getElementById('login-alert');
+
+            try {
+                const res = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ student_id, password })
+                });
+                const json = await res.json();
+                if (json.code === 200) {
+                    currentUser = json.data;
+                    updateUI();
+                    hideLoginModal();
+                    alertEl.innerHTML = '';
+                    if (window.location.hash === '#wallet') loadWallet();
+                    toast('登录成功，欢迎回来！', 'success');
+                } else {
+                    alertEl.innerHTML = `<div class="alert alert-error">${json.msg}</div>`;
+                }
+            } catch (e) {
+                alertEl.innerHTML = `<div class="alert alert-error">登录失败: ${e.message}</div>`;
+            }
+        }
+
+        async function logout() {
+            await fetch('/api/auth/logout', { method: 'POST' });
+            currentUser = null;
+            updateUI();
+            navigate('market');
+        }
+
+        function updateUI() {
+            const display = document.getElementById('user-display');
+            const btnLogin = document.getElementById('btn-login');
+            const btnRegister = document.getElementById('btn-register');
+            const btnLogout = document.getElementById('btn-logout');
+            const uploadBtn = document.getElementById('upload-btn');
+
+            if (currentUser) {
+                display.textContent = `${currentUser.name} | ${currentUser.student_id}`;
+                btnLogin.style.display = 'none';
+                btnRegister.style.display = 'none';
+                btnLogout.style.display = '';
+                if (uploadBtn) uploadBtn.disabled = false;
+                loadBalanceForNav();
+            } else {
+                display.textContent = '未登录';
+                btnLogin.style.display = '';
+                btnRegister.style.display = '';
+                btnLogout.style.display = 'none';
+                if (uploadBtn) uploadBtn.disabled = true;
+            }
+            renderShellIcons();
+        }
+
+        async function loadBalanceForNav() {
+            if (!currentUser) return;
+            try {
+                const res = await fetch('/api/token/balance');
+                const json = await res.json();
+                if (json.code === 200) {
+                    document.getElementById('user-display').innerHTML =
+                        `<span class="user-badge"><span class="dot"></span>${currentUser.name} | EDU: ${json.data.balance}</span>`;
+                    renderShellIcons();
+                }
+            } catch (e) { /* ignore */ }
+        }
+
+        // ===== Market Stats =====
+        async function loadMarketStats() {
+            try {
+                const res = await fetch('/api/health');
+                const json = await res.json();
+                if (json.code === 200) {
+                    const d = json.data;
+                    document.getElementById('market-stats').innerHTML = `
+                        <div class="stat-card">
+                            <div class="stat-icon"><i data-lucide="database"></i></div>
+                            <div class="stat-body"><div class="stat-label">已存证资料</div><div class="stat-value">${d.material_count || 0}</div></div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon"><i data-lucide="download-cloud"></i></div>
+                            <div class="stat-body"><div class="stat-label">下载记录</div><div class="stat-value">${d.download_count || 0}</div></div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon"><i data-lucide="blocks"></i></div>
+                            <div class="stat-body"><div class="stat-label">当前区块</div><div class="stat-value">#${d.block_number || '--'}</div></div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon"><i data-lucide="${d.ganache_connected ? 'wifi' : 'wifi-off'}"></i></div>
+                            <div class="stat-body"><div class="stat-label">链路状态</div><div class="stat-value">${d.ganache_connected ? '在线' : '离线'}</div></div>
+                        </div>
+                    `;
+                    renderShellIcons();
+                }
+            } catch (e) {}
+        }
+
+        // ===== Market IME support + 搜索/筛选互斥 =====
+        let searchComposing = false;
+        const searchInput = document.getElementById('search-input');
+        const courseFilter = document.getElementById('course-filter');
+        searchInput.addEventListener('compositionstart', () => { searchComposing = true; });
+
+        function getMarketFilterState() {
+            return {
+                searchTerm: searchInput.value.trim(),
+                course: courseFilter.value,
+            };
+        }
+
+        function getSelectedCourseLabel() {
+            const option = courseFilter.options[courseFilter.selectedIndex];
+            return option ? option.textContent.trim() : '';
+        }
+
+        function syncMarketFilters(trigger) {
+            const helper = window.marketFilters || {
+                reconcileMarketFilters(state) { return state; },
+            };
+            const next = helper.reconcileMarketFilters(getMarketFilterState(), trigger);
+            searchInput.value = next.searchTerm;
+            courseFilter.value = next.course;
+            updateMarketFilterSummary();
+            return next;
+        }
+
+        function updateMarketFilterSummary() {
+            const summary = document.getElementById('market-filter-summary');
+            if (!summary) return;
+
+            const { searchTerm, course } = getMarketFilterState();
+            const pills = [];
+
+            if (searchTerm) {
+                pills.push(`<span class="filter-pill">关键词：${escHtml(searchTerm)}</span>`);
+            }
+
+            if (course) {
+                pills.push(`<span class="filter-pill">课程：${escHtml(getSelectedCourseLabel() || course)}</span>`);
+            }
+
+            summary.innerHTML = pills.length
+                ? `${pills.join('')}<span class="filter-hint">当前只显示与这些条件匹配的资料。</span>`
+                : '<span class="filter-hint">当前查看全部课程，输入关键词后会自动清空旧课程筛选。</span>';
+        }
+
+        function resetMarketFilters() {
+            searchInput.value = '';
+            courseFilter.value = '';
+            updateMarketFilterSummary();
+            loadMaterials(1);
+        }
+
+        searchInput.addEventListener('compositionend', () => {
+            setTimeout(() => {
+                syncMarketFilters('compositionend');
+                loadMaterials(1);
+            }, 0);
+        });
+        searchInput.addEventListener('input', () => {
+            if (searchComposing) return;
+            syncMarketFilters('search');
+            loadMaterials(1);
+        });
+        courseFilter.addEventListener('change', () => {
+            syncMarketFilters('course');
+            loadMaterials(1);
+        });
+
+        async function loadMaterials(page = 1) {
+            currentMarketPage = page;
+            const container = document.getElementById('material-list');
+            container.innerHTML = '<div class="loading">加载中...</div>';
+            updateMarketFilterSummary();
+
+            const helper = window.marketFilters || {
+                buildMaterialListQuery({ page, pageSize, searchTerm, course }) {
+                    const params = new URLSearchParams({ page, page_size: pageSize });
+                    if (searchTerm) params.set('search', searchTerm);
+                    if (course) params.set('course', course);
+                    return params.toString();
+                },
+            };
+            const params = helper.buildMaterialListQuery({
+                page,
+                pageSize: isMobileViewport() ? 8 : 20,
+                ...getMarketFilterState(),
+            });
+
+            try {
+                const res = await fetch(`/api/material/list?${params}`);
+                const json = await res.json();
+                if (json.code === 200) {
+                    renderMaterialList(json.data);
+                } else {
+                    container.innerHTML = `<div class="alert alert-error">${json.msg}</div>`;
+                }
+            } catch (e) {
+                container.innerHTML = `<div class="alert alert-error">加载失败: ${e.message}</div>`;
+            }
+        }
+
+        function renderMaterialList(data) {
+            const container = document.getElementById('material-list');
+            if (!data.items || data.items.length === 0) {
+                const { searchTerm, course } = getMarketFilterState();
+                const hasFilters = Boolean(searchTerm || course);
+                const emptyTitle = hasFilters ? '没有找到匹配资料' : '还没有资料上链';
+                const emptyDesc = hasFilters
+                    ? '当前关键词或课程筛选没有命中结果，可以清空筛选后再看全部资料。'
+                    : '当前资料广场为空，发布一份课程资料后，这里会显示资料名称、价格、访问权限和链上可信状态。';
+                const emptyAction = hasFilters
+                    ? '<button type="button" class="btn btn-outline" onclick="resetMarketFilters()">清空筛选</button>'
+                    : '';
+                container.innerHTML = `<div class="empty-state"><span class="hero-tip">资料广场</span><strong>${emptyTitle}</strong><p>${emptyDesc}</p>${emptyAction}</div>`;
+                document.getElementById('pagination').innerHTML = '';
+                return;
+            }
+
+            const policies = { 0: '公开下载', 1: '本课程可下载', 2: '指定地址可下载' };
+            const policyBadges = { 0: 'badge-green', 1: 'badge-blue', 2: 'badge-yellow' };
+
+            if (isMobileViewport()) {
+                container.innerHTML = `
+                    <div class="mobile-list">
+                        ${data.items.map(m => `
+                            <div class="mobile-item">
+                                <div class="mobile-item-header">
+                                    <div>
+                                        <div class="mobile-item-title">${escHtml(m.name)}</div>
+                                        <div class="mobile-item-subtitle">${escHtml(m.course)}${m.course_name ? ' · ' + escHtml(m.course_name) : ''}</div>
+                                    </div>
+                                    <span class="badge ${policyBadges[m.policy_type] || 'badge-blue'}">${policies[m.policy_type] || m.policy_type}</span>
+                                </div>
+                                <div class="mobile-meta">
+                                    <div class="mobile-kv"><span>上传者</span><strong class="mono">${shortAddr(m.uploader)}</strong></div>
+                                    <div class="mobile-kv"><span>价格</span><strong>${m.price} EDU</strong></div>
+                                    <div class="mobile-kv"><span>下载次数</span><strong>${m.download_count || m.downloads || 0}</strong></div>
+                                    <div class="mobile-kv"><span>可信状态</span><strong>已存证</strong></div>
+                                </div>
+                                <div class="mobile-actions">
+                                    <button class="btn btn-xs btn-outline" onclick="showMaterialDetail('${m.id}')">查看</button>
+                                    <button class="btn btn-xs btn-primary" onclick="downloadMaterial('${m.id}')">下载</button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            } else {
+                container.innerHTML = `
+                    <div class="table-wrap"><table>
+                        <thead><tr><th>资料名称</th><th>所属课程</th><th>上传者</th><th>价格</th><th>下载次数</th><th>可信状态</th><th>上传时间</th><th>操作</th></tr></thead>
+                        <tbody>
+                            ${data.items.map(m => `
+                                <tr>
+                                    <td><strong>${escHtml(m.name)}</strong></td>
+                                    <td><span class="tag">${escHtml(m.course)}${m.course_name ? ' ' + escHtml(m.course_name) : ''}</span></td>
+                                    <td class="mono">${shortAddr(m.uploader)}</td>
+                                    <td>${m.price} EDU</td>
+                                    <td>${m.download_count || m.downloads || 0}</td>
+                                    <td><span class="badge badge-green">已存证</span> <span class="badge ${policyBadges[m.policy_type] || 'badge-blue'}">${policies[m.policy_type] || m.policy_type}</span></td>
+                                    <td>${m.timestamp ? new Date(m.timestamp * 1000).toLocaleDateString() : '--'}</td>
+                                    <td>
+                                        <button class="btn btn-xs btn-outline" onclick="showMaterialDetail('${m.id}')">查看</button>
+                                        <button class="btn btn-xs btn-primary" onclick="downloadMaterial('${m.id}')">下载</button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody></table></div>
+                `;
+            }
+
+            const totalPages = Math.ceil(data.total / data.page_size);
+            const pagEl = document.getElementById('pagination');
+            let pagHtml = '';
+            for (let i = 1; i <= totalPages && i <= 20; i++) {
+                pagHtml += `<button class="btn btn-sm ${i === data.page ? 'btn-primary' : 'btn-outline'}" onclick="loadMaterials(${i})">${i}</button>`;
+            }
+            pagEl.innerHTML = pagHtml;
+        }
+
+        async function showMaterialDetail(materialId) {
+            try {
+                const res = await fetch(`/api/material/${materialId}`);
+                const json = await res.json();
+                if (json.code !== 200) { toast(json.msg, 'error'); return; }
+                const m = json.data;
+                const policies = { 0: '公开下载', 1: '仅本课程学生可下载', 2: '仅指定地址可下载' };
+                document.getElementById('material-detail-content').innerHTML = `
+                    <dl class="material-detail-grid">
+                        <dt>ID</dt>
+                        <dd>
+                            <div class="copy-row">
+                                <span class="mono">${escHtml(m.id)}</span>
+                                <button type="button" class="btn btn-xs btn-outline copy-btn" onclick="copyText('material-id', decodeURIComponent('${encodeURIComponent(m.id)}'))">复制</button>
+                            </div>
+                        </dd>
+                        <dt>名称</dt><dd>${escHtml(m.name)}</dd>
+                        <dt>课程</dt><dd>${escHtml(m.course)}</dd>
+                        <dt>上传者</dt><dd class="mono">${escHtml(m.uploader)}</dd>
+                        <dt>价格</dt><dd>${m.price} EDU</dd>
+                        <dt>访问权限</dt><dd>${policies[m.policy_type] || m.policy_type}</dd>
+                        <dt>版本</dt><dd>v${m.version}</dd>
+                        <dt>文件指纹</dt><dd class="mono">${escHtml(m.sha256_hash)}</dd>
+                        <dt>内容相似度</dt><dd class="mono">${escHtml(m.sim_hash)}</dd>
+                        <dt>文本长度</dt><dd>${m.text_length} 字符</dd>
+                        <dt>时间</dt><dd>${new Date(m.timestamp * 1000).toLocaleString()}</dd>
+                    </dl>
+                `;
+                document.getElementById('material-detail-modal').style.display = 'flex';
+            } catch (e) { toast('查询失败: ' + e.message, 'error'); }
+        }
+
+        function hideMaterialDetailModal() {
+            document.getElementById('material-detail-modal').style.display = 'none';
+        }
+
+        async function copyText(kind, value) {
+            if (!value || value === '--') {
+                toast('没有可复制的内容', 'error');
+                return;
+            }
+            try {
+                if (navigator.clipboard && window.isSecureContext) {
+                    await navigator.clipboard.writeText(value);
+                } else {
+                    const input = document.createElement('textarea');
+                    input.value = value;
+                    input.setAttribute('readonly', '');
+                    input.style.position = 'fixed';
+                    input.style.opacity = '0';
+                    document.body.appendChild(input);
+                    input.select();
+                    document.execCommand('copy');
+                    input.remove();
+                }
+                const labelMap = { 'wallet-address': '账户地址', 'material-id': '资料 ID' };
+                toast(`${labelMap[kind] || '内容'}已复制`, 'success');
+            } catch (e) {
+                toast('复制失败，请手动选择文本复制', 'error');
+            }
+        }
+
+        async function downloadMaterial(materialId) {
+            if (!currentUser) { toast('请先登录', 'error'); showLoginModal(); return; }
+            try {
+                const res = await fetch(`/api/material/${materialId}/download`);
+                if (!res.ok) {
+                    const json = await res.json();
+                    toast(json.msg || '下载失败', 'error');
+                    return;
+                }
+                const blob = await res.blob();
+                const disposition = res.headers.get('Content-Disposition') || '';
+                const match = disposition.match(/filename="?(.+?)"?$/);
+                const filename = match ? match[1] : 'download';
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url; a.download = filename;
+                document.body.appendChild(a); a.click();
+                document.body.removeChild(a); URL.revokeObjectURL(url);
+                toast('下载成功！', 'success');
+                loadBalanceForNav();
+            } catch (e) { toast('下载失败: ' + e.message, 'error'); }
+        }
+
+        // ===== Upload =====
+        const dropArea = document.getElementById('drop-area');
+        if (dropArea) {
+            dropArea.addEventListener('dragover', e => { e.preventDefault(); dropArea.classList.add('drag-over'); });
+            dropArea.addEventListener('dragleave', () => dropArea.classList.remove('drag-over'));
+            dropArea.addEventListener('drop', e => {
+                e.preventDefault();
+                dropArea.classList.remove('drag-over');
+                if (e.dataTransfer.files.length) {
+                    document.getElementById('file-input').files = e.dataTransfer.files;
+                    onFileSelected({ target: { files: e.dataTransfer.files } });
+                }
+            });
+        }
+
+        function onFileSelected(e) {
+            const file = e.target.files[0];
+            if (file) {
+                document.getElementById('file-placeholder').style.display = 'none';
+                document.getElementById('file-name').style.display = '';
+                document.getElementById('file-name').textContent = '已选择：' + file.name + '（' + formatSize(file.size) + '）';
+                document.getElementById('upload-btn').disabled = !currentUser;
+            }
+        }
+
+        function togglePolicyValue() {
+            document.getElementById('policy-value-group').style.display =
+                document.getElementById('policy-type').value === '2' ? '' : 'none';
+        }
+
+        async function handleUpload(e) {
+            e.preventDefault();
+            if (!currentUser) { toast('请先登录', 'error'); return; }
+
+            const form = e.target;
+            const fileInput = document.getElementById('file-input');
+            const alertEl = document.getElementById('upload-alert');
+            const selectedFile = fileInput.files[0];
+
+            if (!fileInput.files.length) { alertEl.innerHTML = '<div class="alert alert-error">请选择文件</div>'; return; }
+            if (selectedFile && selectedFile.size === 0) { alertEl.innerHTML = '<div class="alert alert-error">上传失败：当前文件是 0 B 空文件，请重新选择本地文件或重新导出后再试</div>'; return; }
+
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            formData.append('course', form.course.value);
+            formData.append('price', form.price.value);
+            formData.append('policy_type', form.policy_type.value);
+            const nameVal = form.name.value.trim();
+            if (nameVal) formData.append('name', nameVal);
+            if (form.policy_type.value === '2') formData.append('policy_value', form.policy_value.value);
+
+            document.getElementById('upload-btn').disabled = true;
+            alertEl.innerHTML = '<div class="alert alert-info">发布中，正在计算文件指纹并写入链上记录...</div>';
+
+            try {
+                const res = await fetch('/api/material/upload', { method: 'POST', body: formData });
+                const json = await res.json();
+                if (json.code === 200) {
+                    const d = json.data;
+                    alertEl.innerHTML = `<div class="alert alert-success">
+                        <strong>发布成功！</strong> 获得 <strong>+20 EDU 积分</strong> 奖励<br>
+                        资料 ID: <span class="mono">${d.material_id}</span><br>
+                        文件指纹（SHA-256）: <span class="mono" style="font-size:11px;">${d.sha256_hash}</span><br>
+                        内容相似度（SimHash）: <span class="mono" style="font-size:11px;">${d.sim_hash}</span> | ${d.text_length} 字符 | ${d.price} EDU
+                    </div>`;
+                    form.reset();
+                    document.getElementById('file-placeholder').style.display = '';
+                    document.getElementById('file-name').style.display = 'none';
+                    document.getElementById('policy-value-group').style.display = 'none';
+                    document.getElementById('policy-type').value = '0';
+                    fileInput.value = '';
+                    loadBalanceForNav();
+                } else {
+                    alertEl.innerHTML = `<div class="alert alert-error">${json.msg}</div>`;
+                }
+            } catch (e) {
+                alertEl.innerHTML = `<div class="alert alert-error">上传失败: ${e.message}</div>`;
+            }
+            document.getElementById('upload-btn').disabled = !currentUser;
+        }
+
+        // ===== Verify =====
+        async function handleVerify(e) {
+            e.preventDefault();
+            const materialId = document.getElementById('verify-material-id').value.trim();
+            const fileInput = document.getElementById('verify-file');
+            const alertEl = document.getElementById('verify-alert');
+            const resultEl = document.getElementById('verify-result');
+
+            if (!fileInput.files.length) { alertEl.innerHTML = '<div class="alert alert-error">请选择文件</div>'; return; }
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            formData.append('material_id', materialId);
+
+            alertEl.innerHTML = '';
+            resultEl.style.display = '';
+            resultEl.innerHTML = '<div class="loading">正在校验文件指纹...</div>';
+
+            try {
+                const res = await fetch('/api/material/verify', { method: 'POST', body: formData });
+                const json = await res.json();
+                if (json.code === 200) {
+                    const v = json.data;
+                    const clsMap = { identical: '完全一致', high: '高度相似', derived: '衍生版本', different: '差异较大' };
+                    const badgeMap = { identical: 'badge-green', high: 'badge-blue', derived: 'badge-yellow', different: 'badge-red' };
+
+                    let kwHtml = '';
+                    if (v.common_keywords !== undefined) {
+                        kwHtml = `
+                            <h4 style="margin:16px 0 8px;font-size:14px;">关键词差异分析</h4>
+                            <div class="detail-grid">
+                                <dt>共同关键词</dt><dd class="keyword-cell">${renderKeywordChips(v.common_keywords, 'badge-blue')}</dd>
+                                <dt>新增关键词</dt><dd class="keyword-cell">${renderKeywordChips(v.added_keywords, 'badge-red')}</dd>
+                                <dt>缺失关键词</dt><dd class="keyword-cell">${renderKeywordChips(v.removed_keywords, 'badge-yellow')}</dd>
+                                <dt>原文件长度</dt><dd>${v.text_length_chain || '--'} 字符</dd>
+                                <dt>待验证文件长度</dt><dd>${v.text_length_local || '--'} 字符</dd>
+                            </div>`;
+                    }
+
+                    const conclusionTitle = v.sha256_match && !v.is_tampered ? '校验通过' : '校验未通过';
+                    const conclusionText = v.sha256_match && !v.is_tampered
+                        ? '文件指纹与链上记录一致，资料未被篡改。'
+                        : '当前文件指纹与链上记录不一致，可能被修改或上传了错误文件。';
+                    resultEl.innerHTML = `
+                        <h3 style="margin-bottom:8px;">${conclusionTitle}</h3>
+                        <p style="margin-bottom:12px;color:var(--text-secondary);">${conclusionText}</p>
+                        <div class="detail-grid">
+                            <dt>文件指纹校验</dt><dd><span class="badge ${v.sha256_match ? 'badge-green' : 'badge-red'}">${v.sha256_match ? '完全一致' : '不一致（文件已改变）'}</span></dd>
+                            <dt>综合判定</dt><dd><span class="badge ${v.is_tampered ? 'badge-red' : 'badge-green'}" style="font-size:14px;padding:4px 12px;">${v.is_tampered ? '⚠ 文件已被篡改' : '✓ 文件完整可信'}</span></dd>
+                            <dt>内容相似度</dt><dd><strong style="font-size:18px;color:${v.similarity_percent >= 90 ? 'var(--success)' : v.similarity_percent >= 70 ? 'var(--warning)' : 'var(--danger)'};">${v.similarity_percent}%</strong></dd>
+                            <dt>相似度分类</dt><dd><span class="badge ${badgeMap[v.classification]}">${clsMap[v.classification] || v.classification}</span></dd>
+                            <dt>技术参考值</dt><dd>${v.hamming_distance} / 256（用于计算内容相似度）</dd>
+                            <dt>链上文件指纹</dt><dd class="mono" style="font-size:11px;">${v.sha256_chain}</dd>
+                            <dt>本地文件指纹</dt><dd class="mono" style="font-size:11px;">${v.sha256_local}</dd>
+                        </div>${kwHtml}`;
+                    resultEl.style.display = '';
+                } else {
+                    alertEl.innerHTML = `<div class="alert alert-error">${json.msg}</div>`;
+                    resultEl.innerHTML = '<div class="empty-compact"><strong>暂无校验结果</strong><span>请输入资料 ID 并上传待校验文件，系统将比对链上文件指纹。</span></div>';
+                }
+            } catch (e) {
+                alertEl.innerHTML = `<div class="alert alert-error">校验失败: ${e.message}</div>`;
+                resultEl.innerHTML = '<div class="empty-compact"><strong>暂无校验结果</strong><span>请输入资料 ID 并上传待校验文件，系统将比对链上文件指纹。</span></div>';
+            }
+        }
+
+        // ===== Wallet =====
+        async function loadWallet() {
+            const promptEl = document.getElementById('wallet-login-prompt');
+            const contentEl = document.getElementById('wallet-content');
+
+            if (!currentUser) {
+                promptEl.style.display = '';
+                contentEl.style.display = 'none';
+                return;
+            }
+
+            promptEl.style.display = 'none';
+            contentEl.style.display = '';
+
+            document.getElementById('wallet-name').textContent = currentUser.name;
+            document.getElementById('wallet-sid').textContent = '学号: ' + currentUser.student_id;
+            document.getElementById('wallet-avatar').textContent = currentUser.name.charAt(0);
+            document.getElementById('wallet-addr').textContent = currentUser.eth_address || '--';
+            document.getElementById('wallet-courses').textContent = (currentUser.courses || []).join(', ') || '无';
+
+            // EDU balance
+            try {
+                const res = await fetch('/api/token/balance');
+                const json = await res.json();
+                document.getElementById('wallet-balance').textContent = json.code === 200 ? json.data.balance + ' EDU' : '--';
+            } catch (e) { document.getElementById('wallet-balance').textContent = '--'; }
+
+            // ETH balance
+            try {
+                const res = await fetch('/api/health');
+                const json = await res.json();
+            document.getElementById('wallet-eth').textContent =
+                    (json.data && json.data.ganache_connected) ? '本地区块链网络可用' : '--';
+            } catch (e) {}
+
+            loadTransactionHistory();
+        }
+
+        async function loadTransactionHistory() {
+            const container = document.getElementById('tx-history');
+            try {
+                const res = await fetch('/api/token/history');
+                const json = await res.json();
+                if (json.code === 200 && json.data.transactions.length > 0) {
+                    const typeMap = { mint: '铸造', burn: '销毁', send: '转出', receive: '转入' };
+                    const badgeMap = { mint: 'badge-green', burn: 'badge-red', send: 'badge-yellow', receive: 'badge-blue' };
+                    const itemsHtml = json.data.transactions.map(tx => {
+                        let category = '';
+                        if (tx.type === 'mint' && tx.amount >= 100) category = '注册奖励';
+                        else if (tx.type === 'mint' && tx.amount === 20) category = '上传奖励';
+                        else if (tx.type === 'receive') category = '下载收入';
+                        else if (tx.type === 'send') category = '下载支出';
+                        else if (tx.type === 'burn') category = '抄袭扣罚';
+                        else category = '其他';
+                        const sign = (tx.type === 'send' || tx.type === 'burn') ? '-' : '+';
+
+                        if (isMobileViewport()) {
+                            return `
+                                <div class="mobile-item">
+                                    <div class="mobile-item-header">
+                                        <div>
+                                            <div class="mobile-item-title">${category}</div>
+                                            <div class="mobile-item-subtitle">${typeMap[tx.type] || tx.type}</div>
+                                        </div>
+                                        <strong style="color:${sign==='+'?'var(--success)':'var(--danger)'};">${sign}${tx.amount} EDU</strong>
+                                    </div>
+                                    <div class="mobile-meta">
+                                        <div class="mobile-kv"><span>交易类型</span><span class="badge ${badgeMap[tx.type] || 'badge-blue'}">${typeMap[tx.type] || tx.type}</span></div>
+                                        <div class="mobile-kv"><span>交易哈希</span><strong class="mono">${shortAddr(tx.tx_hash)}</strong></div>
+                                        <div class="mobile-kv"><span>区块</span><strong>#${tx.block}</strong></div>
+                                    </div>
+                                </div>
+                            `;
+                        }
+
+                        return `
+                            <tr>
+                                <td><span class="badge ${tx.type==='mint'?'badge-green':tx.type==='burn'?'badge-red':'badge-blue'}">${category}</span></td>
+                                <td><span class="badge ${badgeMap[tx.type] || 'badge-blue'}">${typeMap[tx.type] || tx.type}</span></td>
+                                <td><strong style="color:${sign==='+'?'var(--success)':'var(--danger)'};">${sign}${tx.amount} EDU</strong></td>
+                                <td class="mono">${shortAddr(tx.tx_hash)}</td>
+                                <td>#${tx.block}</td>
+                            </tr>
+                        `;
+                    }).join('');
+
+                    container.innerHTML = isMobileViewport()
+                        ? `<div class="mobile-list">${itemsHtml}</div>`
+                        : `<div class="table-wrap"><table>
+                            <thead><tr><th>类别</th><th>类型</th><th>金额</th><th>交易哈希</th><th>区块</th></tr></thead>
+                            <tbody>${itemsHtml}</tbody></table></div>`;
+                } else {
+                    container.innerHTML = '<div class="empty-compact"><strong>暂无转账记录</strong><span>上传奖励、下载支出、资料收益和同学转账会在这里展示。</span></div>';
+                }
+            } catch (e) { container.innerHTML = `<div class="alert alert-error">加载失败: ${e.message}</div>`; }
+        }
+
+        async function handleTransfer(e) {
+            e.preventDefault();
+            if (!currentUser) { toast('请先登录', 'error'); return; }
+
+            const to = document.getElementById('transfer-to').value.trim();
+            const amount = parseInt(document.getElementById('transfer-amount').value);
+            const alertEl = document.getElementById('transfer-alert');
+
+            try {
+                const res = await fetch('/api/token/transfer', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ to_address: to, amount })
+                });
+                const json = await res.json();
+                if (json.code === 200) {
+                    alertEl.innerHTML = `<div class="alert alert-success">转账成功！${amount} EDU 积分 → ${shortAddr(to)}</div>`;
+                    loadWallet();
+                } else {
+                    alertEl.innerHTML = `<div class="alert alert-error">${json.msg}</div>`;
+                }
+            } catch (e) { alertEl.innerHTML = `<div class="alert alert-error">转账失败: ${e.message}</div>`; }
+        }
+
+        // ===== Status =====
+        async function loadStatus() {
+            const container = document.getElementById('status-content');
+            container.innerHTML = '<div class="loading">查询系统状态...</div>';
+            try {
+                const res = await fetch('/api/health');
+                const json = await res.json();
+                if (json.code === 200) {
+                    const d = json.data;
+                    const rows = [
+                        ['后端服务', d.status || '--', d.status === 'ok' || d.status === 'running' ? '正常' : '待确认'],
+                        ['本地区块链网络', d.ganache_url || '--', d.ganache_connected ? '已连接' : '未连接'],
+                        ['当前区块', '#' + (d.block_number || '--'), d.block_number ? '正常' : '待同步'],
+                        ['部署账户', d.deployer || '--', d.deployer ? '已配置' : '未配置'],
+                        ['积分合约（EduToken）', (d.contracts||{}).edu_token || '--', (d.contracts||{}).edu_token ? '已部署' : '未部署'],
+                        ['资料登记合约（MaterialRegistry）', (d.contracts||{}).material_registry || '--', (d.contracts||{}).material_registry ? '已部署' : '未部署'],
+                        ['下载记录合约（DownloadLog）', (d.contracts||{}).download_log || '--', (d.contracts||{}).download_log ? '已部署' : '未部署'],
+                    ];
+                    container.innerHTML = `
+                        <div class="status-summary-grid">
+                            <div class="status-summary-card"><span>后端服务</span><strong>${escHtml(d.status || '--')}</strong></div>
+                            <div class="status-summary-card"><span>链路连接</span><strong>${d.ganache_connected ? '已连接' : '未连接'}</strong></div>
+                            <div class="status-summary-card"><span>当前区块</span><strong>#${d.block_number || '--'}</strong></div>
+                            <div class="status-summary-card"><span>资料总数</span><strong>${d.material_count || 0}</strong></div>
+                        </div>
+                        <div class="table-wrap status-table"><table>
+                            <thead><tr><th>服务项</th><th>当前值</th><th>状态</th></tr></thead>
+                            <tbody>
+                                ${rows.map(([name, value, status]) => `<tr>
+                                    <td>${escHtml(name)}</td>
+                                    <td class="mono">${escHtml(value)}</td>
+                                    <td><span class="badge ${status.includes('已') || status === '正常' ? 'badge-green' : 'badge-yellow'}">${escHtml(status)}</span></td>
+                                </tr>`).join('')}
+                            </tbody>
+                        </table></div>
+                        ${d.chain_error ? `<div class="alert alert-error" style="margin-top:12px;">${escHtml(d.chain_error)}</div>` : ''}`;
+                } else {
+                    container.innerHTML = `<div class="alert alert-error">${json.msg}</div>`;
+                }
+            } catch (e) {
+                container.innerHTML = `<div class="alert alert-error">查询失败: ${e.message}</div>`;
+            }
+        }
+
+        // ===== Audit =====
+        async function loadAudit() {
+            const materialId = document.getElementById('audit-material-id').value.trim();
+            const userAddr = document.getElementById('audit-user-addr').value.trim();
+            const container = document.getElementById('audit-result');
+
+            if (!materialId && !userAddr) {
+                    container.innerHTML = '<div class="alert alert-error">请输入资料 ID 或下载者地址</div>';
+                return;
+            }
+
+            container.innerHTML = '<div class="loading">查询链上记录...</div>';
+
+            try {
+                let url = materialId
+                    ? `/api/audit/downloads/material/${encodeURIComponent(materialId)}`
+                    : `/api/audit/downloads/user/${encodeURIComponent(userAddr)}`;
+
+                const res = await fetch(url);
+                const json = await res.json();
+                if (json.code === 200 && json.data.records.length > 0) {
+                    const itemsHtml = json.data.records.map(r => {
+                        if (isMobileViewport()) {
+                            return `
+                                <div class="mobile-item">
+                                    <div class="mobile-item-header">
+                                        <div>
+                                            <div class="mobile-item-title">${escHtml(r.material_id).substring(0, 18)}...</div>
+                                            <div class="mobile-item-subtitle">${new Date(r.timestamp * 1000).toLocaleString()}</div>
+                                        </div>
+                                        <strong>${r.price} EDU</strong>
+                                    </div>
+                                    <div class="mobile-meta">
+                                        <div class="mobile-kv"><span>下载者</span><strong class="mono">${shortAddr(r.downloader)}</strong></div>
+                                        <div class="mobile-kv"><span>上传者</span><strong class="mono">${shortAddr(r.uploader)}</strong></div>
+                                        <div class="mobile-kv"><span>文件哈希</span><strong class="mono">${(r.file_hash||'').substring(0, 14)}...</strong></div>
+                                    </div>
+                                </div>
+                            `;
+                        }
+
+                        return `
+                            <tr>
+                                <td>${new Date(r.timestamp * 1000).toLocaleString()}</td>
+                                <td><span class="badge badge-blue">下载资料</span></td>
+                                <td class="mono">${shortAddr(r.downloader)}</td>
+                                <td class="mono">${escHtml(r.material_id).substring(0,20)}...</td>
+                                <td class="mono" title="${r.file_hash}">${(r.file_hash||'').substring(0,14)}...</td>
+                                <td>支付 ${r.price} EDU，上传者 ${shortAddr(r.uploader)}</td>
+                            </tr>
+                        `;
+                    }).join('');
+
+                    container.innerHTML = `
+                        <p style="margin-bottom:10px;font-size:13px;color:var(--text-secondary);">审计记录：共找到 <strong>${json.data.count}</strong> 条链上记录</p>
+                        ${isMobileViewport()
+                            ? `<div class="mobile-list">${itemsHtml}</div>`
+                            : `<div class="table-wrap"><table>
+                                <thead><tr><th>时间</th><th>操作类型</th><th>操作者</th><th>资料 ID</th><th>链上交易</th><th>说明</th></tr></thead>
+                                <tbody>${itemsHtml}</tbody></table></div>`}
+                    `;
+                } else {
+                    container.innerHTML = '<div class="empty-compact"><strong>暂无审计记录</strong><span>请输入资料 ID 或下载者地址查询链上行为。</span></div>';
+                }
+            } catch (e) { container.innerHTML = `<div class="alert alert-error">查询失败: ${e.message}</div>`; }
+        }
+
+        async function loadFullAudit() {
+            const materialId = document.getElementById('audit-material-id').value.trim();
+            const container = document.getElementById('audit-result');
+
+            if (!materialId) {
+                container.innerHTML = '<div class="alert alert-error">请输入资料 ID 进行完整追溯</div>';
+                return;
+            }
+
+            container.innerHTML = '<div class="loading">查询完整审计链...</div>';
+
+            try {
+                const res = await fetch(`/api/audit/full/${encodeURIComponent(materialId)}`);
+                const json = await res.json();
+                if (json.code !== 200) { container.innerHTML = `<div class="alert alert-error">${json.msg}</div>`; return; }
+                const d = json.data;
+                const m = d.material;
+                if (!m) { container.innerHTML = '<div class="empty">资料不存在</div>'; return; }
+
+                let html = `<div style="margin-bottom:16px;">
+                    <strong style="font-size:15px;">${escHtml(m.name)}</strong>
+                    <span class="badge badge-blue" style="margin-left:8px;">v${m.version}</span>
+                    <span class="tag" style="margin-left:4px;">${escHtml(m.course)} ${escHtml(m.course_name||'')}</span>
+                </div>`;
+
+                // 上传信息
+                html += `<div class="detail-grid" style="margin-bottom:16px;">
+                    <dt>上传者</dt><dd class="mono">${shortAddr(m.uploader)}</dd>
+                    <dt>当前SHA256</dt><dd class="mono" style="font-size:11px;">${m.sha256_hash}</dd>
+                    <dt>当前SimHash</dt><dd class="mono" style="font-size:11px;">${m.sim_hash}</dd>
+                </div>`;
+
+                // 修改记录
+                html += `<h4 style="margin-bottom:8px;font-size:14px;">📝 修改记录 (${d.updates.length}条)</h4>`;
+                if (d.updates.length > 0) {
+                    html += `<div class="table-wrap"><table>
+                        <thead><tr><th>版本</th><th>新SHA256</th><th>时间</th></tr></thead><tbody>`;
+                    d.updates.forEach(u => {
+                        html += `<tr>
+                            <td><span class="badge badge-yellow">→ v${u.new_version}</span></td>
+                            <td class="mono" style="font-size:11px;">${(u.new_sha256_hash||'').substring(0,30)}...</td>
+                            <td>${new Date(u.timestamp*1000).toLocaleString()}</td>
+                        </tr>`;
+                    });
+                    html += `</tbody></table></div>`;
+                } else {
+                    html += '<div class="empty" style="padding:8px;font-size:12px;">暂无修改记录</div>';
+                }
+
+                // 下载记录
+                html += `<h4 style="margin:16px 0 8px;font-size:14px;">⬇ 下载记录 (${d.downloads.length}条)</h4>`;
+                if (d.downloads.length > 0) {
+                    html += `<div class="table-wrap"><table>
+                        <thead><tr><th>下载者</th><th>上传者</th><th>价格</th><th>时间</th></tr></thead><tbody>`;
+                    d.downloads.forEach(dl => {
+                        html += `<tr>
+                            <td class="mono">${shortAddr(dl.downloader)}</td>
+                            <td class="mono">${shortAddr(dl.uploader)}</td>
+                            <td><strong>${dl.price} EDU</strong></td>
+                            <td>${new Date(dl.timestamp*1000).toLocaleString()}</td>
+                        </tr>`;
+                    });
+                    html += `</tbody></table></div>`;
+                } else {
+                    html += '<div class="empty" style="padding:8px;font-size:12px;">暂无下载记录</div>';
+                }
+
+                // 删除记录
+                html += `<h4 style="margin:16px 0 8px;font-size:14px;">🗑 删除记录 (${d.deletions.length}条)</h4>`;
+                if (d.deletions.length > 0) {
+                    d.deletions.forEach(del => {
+                        html += `<div style="font-size:13px;padding:4px 0;">
+                            <span class="badge badge-red">已删除</span>
+                            操作者: <span class="mono">${shortAddr(del.caller)}</span>
+                            ${new Date(del.timestamp*1000).toLocaleString()}
+                        </div>`;
+                    });
+                } else {
+                    html += '<div class="empty" style="padding:8px;font-size:12px;">暂无删除记录</div>';
+                }
+
+                container.innerHTML = html;
+            } catch (e) { container.innerHTML = `<div class="alert alert-error">查询失败: ${e.message}</div>`; }
+        }
+
+        function initApp() {
+            renderShellIcons();
+            checkSession();
+            navigate(window.location.hash.replace('#', '') || 'market');
+        }
+        initApp();
+
+        // ===== Helpers =====
+        function escHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+        function renderKeywordChips(keywords, badgeClass) {
+            const items = (keywords || []).filter(Boolean);
+            if (items.length === 0) {
+                return '<span style="color:var(--text-muted);">无</span>';
+            }
+            return `<div class="keyword-list">${items.map(k => `<span class="badge ${badgeClass} keyword-chip">${escHtml(k)}</span>`).join('')}</div>`;
+        }
+        function shortAddr(addr) { if (!addr || addr.length < 12) return addr || '--'; return addr.slice(0, 6) + '...' + addr.slice(-4); }
+        function formatSize(bytes) { if (bytes < 1024) return bytes + ' B'; if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB'; return (bytes / 1048576).toFixed(1) + ' MB'; }
+    </script>
 </body>
 </html>

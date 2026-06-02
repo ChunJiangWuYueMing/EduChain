@@ -11,10 +11,12 @@ chain_service.py — Web3 统一封装层
 """
 
 import json
+import os
 import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
+from urllib.parse import urlsplit, urlunsplit
 
 from web3 import Web3
 from web3.contract import Contract
@@ -35,7 +37,7 @@ def _load_abi(contract_name: str) -> list:
         raise FileNotFoundError(
             f"找不到编译产物: {path}\n请先运行: node scripts/compile.js"
         )
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         return json.load(f)["abi"]
 
 
@@ -59,10 +61,16 @@ class MaterialData:
     timestamp: int
 
     def to_dict(self) -> dict:
+        # 课程名称映射
+        course_names = {
+            "CS201": "数据结构", "CS301": "操作系统",
+            "CS302": "计算机网络", "MATH101": "高等数学", "PHY101": "大学物理",
+        }
         return {
             "id": self.id,
             "name": self.name,
             "course": self.course,
+            "course_name": course_names.get(self.course, ""),
             "uploader": self.uploader,
             "sha256_hash": self.sha256_hash,
             "sim_hash": self.sim_hash,
@@ -93,6 +101,40 @@ class DownloadRecord:
             "uploader": self.uploader,
             "price": self.price,
             "file_hash": self.file_hash,
+            "timestamp": self.timestamp,
+        }
+
+
+@dataclass
+class UpdateRecord:
+    """资料修改记录"""
+    material_id: str
+    new_version: int
+    new_sha256_hash: str
+    new_sim_hash: int
+    timestamp: int
+
+    def to_dict(self) -> dict:
+        return {
+            "material_id": self.material_id,
+            "new_version": self.new_version,
+            "new_sha256_hash": self.new_sha256_hash,
+            "new_sim_hash": self.new_sim_hash,
+            "timestamp": self.timestamp,
+        }
+
+
+@dataclass
+class DeleteRecord:
+    """资料删除记录"""
+    material_id: str
+    caller: str
+    timestamp: int
+
+    def to_dict(self) -> dict:
+        return {
+            "material_id": self.material_id,
+            "caller": self.caller,
             "timestamp": self.timestamp,
         }
 
@@ -142,10 +184,9 @@ class ChainService:
         if env_path.exists():
             self._load_env(env_path)
 
-        # 连接 Ganache
-        self.w3 = Web3(Web3.HTTPProvider(config.GANACHE_URL))
-        if not self.w3.is_connected():
-            raise ConnectionError(f"无法连接 Ganache: {config.GANACHE_URL}")
+        # 连接 Ganache。Windows 本地迁移时，旧配置里常保留 Docker 主机名 `ganache`，
+        # 这里会自动回退到本机回环地址，避免必须手动改 .env 才能启动。
+        self.w3 = self._connect_ganache()
 
         # 部署者账户
         accounts = self.w3.eth.accounts
@@ -158,17 +199,82 @@ class ChainService:
 
         self._initialized = True
 
+    def _connect_ganache(self) -> Web3:
+        """按候选地址尝试连接 Ganache，优先使用显式配置，其次回退到本机地址。"""
+        attempted_urls: list[str] = []
+        for candidate_url in self._candidate_ganache_urls(config.GANACHE_URL):
+            attempted_urls.append(candidate_url)
+            w3 = Web3(Web3.HTTPProvider(candidate_url))
+            if w3.is_connected():
+                config.GANACHE_URL = candidate_url
+                os.environ["GANACHE_URL"] = candidate_url
+                return w3
+
+        attempted = ", ".join(attempted_urls)
+        raise ConnectionError(f"无法连接 Ganache，已尝试: {attempted}")
+
+    @staticmethod
+    def _candidate_ganache_urls(primary_url: str) -> list[str]:
+        """生成 Ganache RPC 候选地址，兼容 Docker 主机名与 Windows 本地回环地址。"""
+        candidates: list[str] = []
+
+        def add(url: str) -> None:
+            if url and url not in candidates:
+                candidates.append(url)
+
+        add(primary_url)
+        parsed = urlsplit(primary_url)
+        host = parsed.hostname
+
+        if not host:
+            add("http://127.0.0.1:8545")
+            return candidates
+
+        if host == "ganache":
+            add(ChainService._replace_url_host(primary_url, "127.0.0.1"))
+            add(ChainService._replace_url_host(primary_url, "localhost"))
+        elif host == "localhost":
+            add(ChainService._replace_url_host(primary_url, "127.0.0.1"))
+        elif host == "127.0.0.1":
+            add(ChainService._replace_url_host(primary_url, "localhost"))
+
+        return candidates
+
+    @staticmethod
+    def _replace_url_host(url: str, host: str) -> str:
+        """保留协议、端口和路径，仅替换 URL 主机名。"""
+        parsed = urlsplit(url)
+        auth = ""
+        if parsed.username:
+            auth = parsed.username
+            if parsed.password:
+                auth = f"{auth}:{parsed.password}"
+            auth = f"{auth}@"
+
+        netloc = f"{auth}{host}"
+        if parsed.port:
+            netloc = f"{netloc}:{parsed.port}"
+
+        return urlunsplit((parsed.scheme, netloc, parsed.path, parsed.query, parsed.fragment))
+
     def _load_env(self, env_path: Path) -> None:
-        """简易 .env 解析，将值设入 config"""
-        import os
-        with open(env_path) as f:
+        """
+        简易 .env 解析，将值设入 config。
+
+        保护已存在的环境变量（如 Docker Compose 注入的 GANACHE_URL），
+        不被 .env 文件覆盖。.env 仅补充未被设置的变量。
+        """
+        with open(env_path, encoding="utf-8") as f:
             for line in f:
                 line = line.strip()
                 if not line or line.startswith("#"):
                     continue
                 if "=" in line:
                     key, value = line.split("=", 1)
-                    os.environ[key.strip()] = value.strip()
+                    key = key.strip()
+                    # 不覆盖已存在的环境变量（Docker Compose 注入优先）
+                    if key not in os.environ:
+                        os.environ[key] = value.strip()
         # 重新读取环境变量到 config
         config.GANACHE_URL = os.getenv("GANACHE_URL", config.GANACHE_URL)
         config.EDU_TOKEN_ADDRESS = os.getenv("EDU_TOKEN_ADDRESS", config.EDU_TOKEN_ADDRESS)
@@ -241,7 +347,13 @@ class ChainService:
             "chainId": config.CHAIN_ID,
         })
         signed = self.w3.eth.account.sign_transaction(tx, private_key)
-        tx_hash = self.w3.eth.send_raw_transaction(signed.raw_transaction)
+        raw_tx = getattr(signed, "raw_transaction", None)
+        if raw_tx is None:
+            raw_tx = getattr(signed, "rawTransaction", None)
+        if raw_tx is None:
+            raise AttributeError("SignedTransaction 缺少 raw transaction 字段")
+
+        tx_hash = self.w3.eth.send_raw_transaction(raw_tx)
         receipt = self.w3.eth.wait_for_transaction_receipt(tx_hash, timeout=30)
         if receipt["status"] != 1:
             raise RuntimeError(f"交易失败: tx={tx_hash.hex()}")
@@ -488,6 +600,77 @@ class ChainService:
         """获取总下载记录数"""
         self._ensure_init()
         return self._download_log.functions.getRecordCount().call()
+
+    # ======================================================
+    #  修改/删除事件查询
+    # ======================================================
+
+    def get_updates_by_material(self, material_id: str) -> list[UpdateRecord]:
+        """查询资料的修改记录（从 MaterialUpdated 事件，客户端过滤）"""
+        self._ensure_init()
+        try:
+            target = Web3.keccak(text=material_id).hex()
+            events = self._registry.events.MaterialUpdated.get_logs(from_block=0)
+            records = []
+            for ev in events:
+                ev_id = ev.args.id.hex() if isinstance(ev.args.id, bytes) else ev.args.id
+                if ev_id == target:
+                    records.append(UpdateRecord(
+                        material_id=material_id,
+                        new_version=ev.args.newVersion,
+                        new_sha256_hash="0x" + ev.args.newSha256Hash.hex(),
+                        new_sim_hash=ev.args.newSimHash,
+                        timestamp=ev.args.timestamp,
+                    ))
+            return records
+        except Exception:
+            return []
+
+    def get_deletions_by_material(self, material_id: str) -> list[DeleteRecord]:
+        """查询资料的删除记录（从 MaterialDeleted 事件，客户端过滤）"""
+        self._ensure_init()
+        try:
+            target = Web3.keccak(text=material_id).hex()
+            events = self._registry.events.MaterialDeleted.get_logs(from_block=0)
+            records = []
+            for ev in events:
+                ev_id = ev.args.id.hex() if isinstance(ev.args.id, bytes) else ev.args.id
+                if ev_id == target:
+                    records.append(DeleteRecord(
+                        material_id=material_id,
+                        caller=ev.args.caller,
+                        timestamp=ev.args.timestamp,
+                    ))
+            return records
+        except Exception:
+            return []
+
+    def get_updates_by_user(self, address: str) -> list[UpdateRecord]:
+        """查询某用户上传资料的修改记录（通过资料列表间接查询）"""
+        self._ensure_init()
+        records = []
+        try:
+            count = self.get_material_count()
+            for i in range(count):
+                mat_id = self._registry.functions.materialIds(i).call()
+                material = self.query_material(mat_id)
+                if material and material.uploader.lower() == address.lower():
+                    records.extend(self.get_updates_by_material(mat_id))
+            records.sort(key=lambda r: r.timestamp, reverse=True)
+        except Exception:
+            pass
+        return records
+
+    def get_full_audit(self, material_id: str) -> dict:
+        """获取资料的完整审计信息（下载+修改+删除）"""
+        self._ensure_init()
+        material = self.query_material(material_id)
+        return {
+            "material": material.to_dict() if material else None,
+            "downloads": [r.to_dict() for r in self.get_downloads_by_material(material_id)],
+            "updates": [r.to_dict() for r in self.get_updates_by_material(material_id)],
+            "deletions": [r.to_dict() for r in self.get_deletions_by_material(material_id)],
+        }
 
     # ======================================================
     #  辅助方法
