@@ -1,229 +1,301 @@
 # EduChain
 
-## 面向校园学习资料共享的区块链可信分发原型系统
+## 校园学习资料可信交换与区块链存证平台
 
-EduChain 是一个仍在开发中的校园学习资料可信交换原型系统，聚焦两个核心问题：
+EduChain 是一个面向高校教学实验场景的区块链应用原型，用于完成学习资料上传、链上存证、可信验证、付费下载、EDU 通证激励和审计追溯。
 
-1. 资料可信：通过链上存证记录资料哈希、内容指纹、上传者和下载日志。
-2. 共享激励：通过 EduToken 通证机制奖励注册、上传，并支持下载付费和扣罚预留。
+项目目前已完成智能合约、Flask REST API、Vue 3 前端主要页面和 Docker Compose 部署框架，当前阶段重点是前后端业务联调、真实链上数据替换和端到端测试。
 
-当前仓库已经完成合约层、后端 service 层、内容指纹模块和健康检查页；完整 REST 路由和业务前端页面仍在接入中。本文档以当前代码为准，早期方案中的完整页面、完整 API 和演示脚本属于后续目标。
+> 当前定位：可运行的课程设计/实验原型，尚不适合直接用于生产环境。
 
-## 当前完成度
+## 当前进度
 
-### 已实现
+更新时间：2026-06-09
 
-- 智能合约：`EduToken`、`MaterialRegistry`、`DownloadLog`。
-- 合约编译部署：`scripts/compile.js` 编译，`scripts/deploy.py` 部署并写入 `backend/.env`。
-- 后端入口：Flask 应用工厂与 `/api/health` 健康检查接口。
-- 后端服务层：链交互、资料编排、通证操作、用户初始化与私钥注入。
-- 内容指纹：SHA-256 文件完整性校验 + 256 位 SimHash 内容相似度检测。
-- 前端：`frontend/index.html` 系统状态页，调用 `/api/health`。
-- 测试脚本：指纹、链服务、通证服务、签名交易闭环验证。
+| 模块 | 状态 | 当前说明 |
+| :--- | :---: | :--- |
+| 智能合约 | 已完成 | `EduToken`、`MaterialRegistry`、`DownloadLog` 已实现，可编译和部署到 Ganache |
+| 内容指纹 | 已完成 | 支持 SHA-256 完整性校验与 256 位 SimHash 内容相似度检测 |
+| 后端服务层 | 已完成 | 链交互、用户、资料、通证和指纹服务已实现 |
+| REST API | 基本完成 | 认证、资料、钱包、审计和健康检查蓝图已接入 Flask |
+| Vue 前端页面 | 已完成 | 登录、资料市场、上传、验证、钱包、审计追溯、系统状态共 7 个页面 |
+| 设计系统 | 已完成 | 页面统一遵循 `frontend/DESIGN_SYSTEM.md`，使用西南交大蓝和统一后台布局 |
+| 前后端联调 | 进行中 | 已有统一 API 请求封装，但当前主要页面仍以演示数据和前端交互逻辑为主 |
+| 自动化测试 | 部分完成 | 已有认证、指纹、链服务、通证和签名交易测试，部分测试依赖 Ganache 与已部署合约 |
+| Docker 部署 | 基本完成 | 支持 Ganache、Flask、Vue/Nginx 一键编排，后端启动时会检查并部署合约 |
 
-### 尚未完成
+综合来看，项目已进入“功能整合与联调”阶段。界面和后端能力均已成型，后续工作的重点不是继续补静态页面，而是让页面数据、登录态、上传下载和链上交易全部走真实 API。
 
-- `backend/routes/` 尚未接入，`/api/auth`、`/api/material`、`/api/token`、`/api/audit` 仍是规划接口。
-- 资料市场页、上传页、验证报告页、钱包页尚未完成。
-- 白名单访问策略 `policy_type=2` 仍是预留逻辑。
-- 前端 Web Crypto 二次校验、关键词差异展示、完整交易时间线还未接入 UI。
+## 已完成页面
 
-## 技术栈
+前端使用 Vue 3、Vue Router 和 Vite 构建。
 
-| 层次 | 当前选型 | 说明 |
+| 路由 | 页面 | 当前能力 |
 | :--- | :--- | :--- |
-| 前端 | HTML / CSS / Vanilla JS | 当前只有健康检查页，原型阶段不引入 React/Vue |
-| 后端 | Python + Flask | 应用入口、服务层、指纹计算、链交互 |
-| 区块链交互 | Web3.py | 后端统一通过 `chain_service.py` 访问合约 |
-| 智能合约 | Solidity `^0.8.20` + OpenZeppelin | ERC-20 通证、资料注册、下载日志 |
-| 合约编译 | `solc` + Node.js 脚本 | `npm run compile` 输出 ABI 到 `backend/compiled/` |
-| 测试链 | Ganache | 本地 Ethereum 测试环境 |
-| 内容提取 | `python-pptx` / `python-docx` / `PyPDF2` | 提取 PPT、Word、PDF 文本 |
-| 中文分词 | `jieba.analyse` | TF-IDF 关键词提取 |
-| 内容指纹 | 256 位 SimHash | 使用 SHA-256 作为关键词哈希基函数 |
-| 部署 | Docker Compose | Ganache + Flask 后端 + Nginx 静态前端 |
+| `/login` | 登录系统 | 表单校验、错误状态、演示登录流程 |
+| `/market` | 资料市场 | 搜索筛选、资料列表、详情面板、分页和状态展示 |
+| `/upload` | 上传资料 | 文件选择、类型/大小校验、课程与策略配置、上传结果和相似资料展示 |
+| `/verify` | 文件验证 | 待验证文件选择、资料 ID、验证报告、相似度及差异关键词展示 |
+| `/wallet` | 我的钱包 | EDU 余额、钱包信息、交易筛选、交易历史和近期统计 |
+| `/audit` | 审计追溯 | 我的下载、我的上传、资料下载记录、查询、分页和管理员权限提示 |
+| `/status` | 系统状态 | 后端、Ganache、区块、合约、数据统计和检查记录展示 |
+
+当前登录页的前端演示账号为：
+
+```text
+学号：20240001
+密码：password123
+```
+
+该账号仅用于前端页面演示。后端认证使用 `backend/users.json` 中的本地用户，默认密码规则以 `user_service` 和测试代码为准。目前前端登录页尚未正式接入 `/api/auth/login`。
 
 ## 系统架构
 
 ```mermaid
-flowchart TD
-    A["前端层<br/>当前: 系统状态页<br/>规划: 市场/上传/验证/钱包"] --> B["后端 Flask<br/>当前: /api/health + service 层"]
-    B --> C["内容指纹引擎<br/>SHA-256 + 256 位 SimHash"]
-    B --> D["区块链层<br/>EduToken / MaterialRegistry / DownloadLog"]
-    B --> E["链下存储<br/>uploads/ + users.json"]
-    D --> F["Ganache 本地测试链"]
+flowchart LR
+    A["Vue 3 前端<br/>Vite / Vue Router"] -->|"/api"| B["Flask REST API"]
+    B --> C["用户与 Session 认证"]
+    B --> D["资料服务与文件存储"]
+    B --> E["指纹引擎<br/>SHA-256 + SimHash"]
+    B --> F["Web3.py 链服务"]
+    F --> G["Ganache"]
+    G --> H["EduToken"]
+    G --> I["MaterialRegistry"]
+    G --> J["DownloadLog"]
 ```
 
-当前实际 HTTP 流程：
+Docker 部署时，Nginx 托管 Vue 构建产物并将 `/api/` 反向代理到 Flask。后端入口脚本会等待 Ganache 就绪，检查合约是否有效，并在需要时自动执行部署。
 
-```text
-frontend/index.html
-  -> GET /api/health
-  -> chain_service 查询 Ganache、合约地址、资料数、下载记录数
-  -> 前端展示系统状态
-```
+## 核心功能
 
-上传、下载、验证等业务流程已经在 `backend/services/material_service.py` 中形成 service 编排，但尚未暴露为 REST API。
+### 资料可信存证
 
-## 核心设计
+- 上传 PDF、DOCX、PPTX、TXT、MD 文件。
+- 计算文件 SHA-256，判断文件字节是否完全一致。
+- 提取文本并生成 256 位 SimHash，判断内容相似程度。
+- 将资料 ID、上传者、哈希、内容指纹、价格、版本和访问策略写入链上。
 
-### 双层内容指纹
+### 文件验证
 
-| 指纹 | 当前实现 | 用途 |
+| 判断依据 | 用途 |
+| :--- | :--- |
+| SHA-256 | 判断文件是否被修改 |
+| SimHash | 判断内容是否高度相似或属于衍生版本 |
+| 汉明距离 | 量化两个 SimHash 之间的差异 |
+
+当前分类规则：
+
+| 汉明距离 | 分类 |
+| :--- | :--- |
+| `0` | 完全一致 |
+| `1-12` | 高度相似 |
+| `13-40` | 衍生版本 |
+| `>40` | 差异较大 |
+
+### EDU 通证
+
+- 首次登录注册奖励：100 EDU。
+- 成功上传资料奖励：20 EDU。
+- 下载资料时由下载者向上传者支付 EDU。
+- 支持铸造、授权、转账、销毁和交易历史查询。
+- EDU 当前设置为整数积分，`decimals()` 返回 `0`。
+
+### 权限与审计
+
+- Session 登录态与 `login_required` 权限控制。
+- 学生只能访问与自身相关的记录。
+- 全局审计接口由 `admin_required` 限制。
+- 下载行为通过 `DownloadLog` 合约记录，可按资料或用户查询。
+- 访问策略支持公开和同课程；白名单策略仍属于预留能力。
+
+## 技术栈
+
+| 层次 | 技术 |
+| :--- | :--- |
+| 前端 | Vue 3、Vue Router、Pinia、Vite |
+| 样式 | 原生 CSS、项目设计系统 |
+| 后端 | Python 3、Flask、Flask-CORS |
+| 区块链交互 | Web3.py |
+| 智能合约 | Solidity、OpenZeppelin |
+| 本地测试链 | Ganache，Chain ID `1337` |
+| 内容处理 | PyPDF2、python-docx、python-pptx、jieba |
+| 部署 | Docker Compose、Nginx |
+
+## API 概览
+
+所有接口统一使用 `/api` 前缀。
+
+### 系统
+
+| 方法 | 路径 | 说明 |
 | :--- | :--- | :--- |
-| SHA-256 | 对文件原始字节分块计算 | 判断文件是否比特级完全一致 |
-| SimHash | 对提取文本计算 256 位内容指纹 | 量化内容相似度，辅助识别微改、衍生版本或明显差异 |
+| GET | `/api/health` | 后端、Ganache、区块、合约和数据统计 |
 
-当前 SimHash 分类：
+### 认证
 
-| 汉明距离 d | 分类 | 含义 |
+| 方法 | 路径 | 说明 |
 | :--- | :--- | :--- |
-| `0` | `identical` | 内容指纹完全一致 |
-| `1-12` | `high` | 高度相似 |
-| `13-40` | `derived` | 衍生版本或明显改写 |
-| `>40` | `different` | 差异较大 |
+| POST | `/api/auth/login` | 学号和密码登录，建立 Session |
+| POST | `/api/auth/logout` | 清除登录态 |
+| GET | `/api/auth/me` | 获取当前用户和实时 EDU 余额 |
 
-### EduToken 通证机制
+### 资料
 
-当前代码中的通证能力包括：
-
-- `mint()` / `mintWithReason()`：铸造 EDU。
-- `burnFrom()`：销毁 EDU，用于抄袭扣罚等预留场景。
-- `approve()` / `transferFrom()`：下载扣费授权和转移。
-- `decimals()` 返回 `0`，EDU 是整数积分。
-- `authorizeMinter()` 授权 `MaterialRegistry` 在上传注册时铸造 20 EDU 奖励。
-
-当前经济参数在代码中体现为：
-
-| 行为 | EDU 变化 | 当前状态 |
+| 方法 | 路径 | 说明 |
 | :--- | :--- | :--- |
-| 注册奖励 | +100 EDU | `token_service.reward_register()` 已实现 |
-| 上传奖励 | +20 EDU | `MaterialRegistry.register()` 内部 mint |
-| 下载付费 | 下载者 -> 上传者 | `MaterialRegistry.download()` 使用 `transferFrom()` |
-| 抄袭扣罚 | 销毁最多 50 EDU | `token_service.penalize_plagiarism()` 已实现为 service |
+| POST | `/api/material/upload` | 上传资料并完成指纹计算及链上注册 |
+| GET | `/api/material/list` | 查询、筛选和分页获取资料 |
+| GET | `/api/material/<id>` | 获取资料详情 |
+| POST | `/api/material/<id>/download` | 扣费并下载文件 |
+| POST | `/api/material/<id>/verify` | 上传本地文件并与链上资料比对 |
+| DELETE | `/api/material/<id>` | 上传者软删除资料 |
 
-## 合约概览
+### 通证
 
-### EduToken
+| 方法 | 路径 | 说明 |
+| :--- | :--- | :--- |
+| GET | `/api/token/balance` | 查询当前用户 EDU 余额 |
+| GET | `/api/token/transactions` | 分页查询当前用户交易历史 |
 
-继承 OpenZeppelin `ERC20` 和 `Ownable`，当前构造函数固定为 `EduToken` / `EDU`。
+### 审计
 
-核心接口：
+| 方法 | 路径 | 说明 |
+| :--- | :--- | :--- |
+| GET | `/api/audit/downloads/<material_id>` | 按资料查询下载记录 |
+| GET | `/api/audit/user/<address>` | 按地址查询下载记录 |
+| GET | `/api/audit/my-downloads` | 当前用户的下载记录 |
+| GET | `/api/audit/my-uploads` | 当前用户上传的资料 |
+| GET | `/api/audit/all` | 全局下载记录，仅管理员可访问 |
 
-- `authorizeMinter(address minter)`
-- `revokeMinter(address minter)`
-- `mint(address to, uint256 amount)`
-- `mintWithReason(address to, uint256 amount, string reason)`
-- `burnFrom(address from, uint256 amount, string reason)`
-- ERC-20 标准 `transfer`、`approve`、`transferFrom`、`balanceOf`、`allowance`
-
-### MaterialRegistry
-
-记录资料元数据，链上字段包括：
-
-- `id`
-- `name`
-- `course`
-- `uploader`
-- `sha256Hash`
-- `simHash`，类型为 `uint256`
-- `textLength`
-- `policyType`
-- `policyValue`
-- `price`
-- `version`
-- `deleted`
-- `timestamp`
-
-当前没有完整历史版本数组，`update()` 会覆盖最新哈希/SimHash/文本长度并递增版本号。
-
-### DownloadLog
-
-当前下载记录字段：
-
-- `materialId`
-- `downloader`
-- `uploader`
-- `price`
-- `fileHash`
-- `timestamp`
-
-接口包括 `recordDownload()`、`queryByMaterial()`、`queryByDownloader()` 和 `getRecordCount()`。
+更详细的请求和响应格式参见 `docs/api_spec.md`。
 
 ## 项目结构
 
 ```text
 EduChain/
-├── contracts/
+├── contracts/                 # Solidity 智能合约
 │   ├── EduToken.sol
 │   ├── MaterialRegistry.sol
 │   └── DownloadLog.sol
 ├── backend/
-│   ├── app.py
-│   ├── config.py
-│   ├── users.json
-│   ├── compiled/
-│   ├── fingerprint/
-│   ├── services/
-│   ├── tests/
-│   └── utils/
+│   ├── app.py                 # Flask 应用入口与蓝图注册
+│   ├── entrypoint.sh          # 容器启动、链检查和自动部署
+│   ├── routes/                # auth/material/token/audit API
+│   ├── services/              # 用户、链、资料、通证服务
+│   ├── fingerprint/           # 文本提取与指纹计算
+│   ├── tests/                 # 后端及链上能力测试
+│   ├── compiled/              # 合约 ABI 与字节码
+│   └── uploads/               # 本地上传文件
 ├── frontend/
-│   ├── index.html
+│   ├── src/
+│   │   ├── views/             # 七个主要业务页面
+│   │   ├── router/            # Vue Router
+│   │   ├── stores/            # Pinia 状态
+│   │   ├── utils/api.js       # API 与 Web Crypto 工具
+│   │   └── assets/            # 样式和品牌图片
+│   ├── public/                # favicon 等公共资源
+│   ├── DESIGN_SYSTEM.md       # 前端设计规范
+│   ├── Dockerfile
 │   └── nginx.conf
 ├── scripts/
-│   ├── compile.js
-│   └── deploy.py
-└── docs/
+│   ├── compile.js             # 编译合约
+│   └── deploy.py              # 部署合约并写入配置
+├── docs/                      # 架构、API、合约和数据模型文档
+├── docker-compose.yml
+├── requirements.txt
+└── package.json
 ```
 
 ## 快速开始
 
-### 安装合约依赖
+### 方式一：Docker Compose
 
-```powershell
-npm install
-```
-
-### 编译合约
-
-```powershell
-npm run compile
-```
-
-编译产物会写入 `backend/compiled/`。
-
-### 启动服务
+建议使用 Docker 启动完整环境：
 
 ```powershell
 docker compose up --build
 ```
 
-当前服务端口：
+启动后访问：
 
-- Ganache: `8545`
-- Backend: `5000`
-- Frontend: `8080`
+- 前端：`http://localhost:8080`
+- 后端健康检查：`http://localhost:5000/api/health`
+- Ganache RPC：`http://localhost:8545`
 
-### 部署合约
+后端容器会自动等待 Ganache，检查已部署合约；若合约不存在或失效，会自动运行 `scripts/deploy.py`。
+
+停止服务：
+
+```powershell
+docker compose down
+```
+
+如需同时清理 Ganache 和上传文件卷：
+
+```powershell
+docker compose down -v
+```
+
+### 方式二：本地开发
+
+#### 1. 安装并编译合约
+
+```powershell
+npm install
+npm run compile
+```
+
+#### 2. 安装 Python 依赖
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+```
+
+#### 3. 启动 Ganache 并部署合约
+
+确保 Ganache 运行在 `http://127.0.0.1:8545`，然后执行：
 
 ```powershell
 python scripts/deploy.py
 ```
 
-部署脚本会写入 `backend/.env`，供后端初始化 `chain_service` 使用。
+部署结果会写入 `backend/.env`。
 
-### 本地启动后端
+#### 4. 启动后端
 
 ```powershell
 cd backend
 python app.py
 ```
 
-如果不在 Docker 内运行，需要确保 `GANACHE_URL` 指向本机 Ganache，例如 `http://127.0.0.1:8545`。
+后端默认运行在 `http://localhost:5000`。
 
-## 测试脚本
+#### 5. 启动前端
 
-这些测试是脚本式验证，部分需要 Ganache 已启动且合约已部署。
+另开一个终端：
+
+```powershell
+cd frontend
+npm install
+npm run dev
+```
+
+前端默认运行在 `http://localhost:5173`，Vite 会将 `/api` 代理到 `http://localhost:5000`。
+
+### 生产构建
+
+```powershell
+cd frontend
+npm run build
+```
+
+构建产物位于 `frontend/dist/`。
+
+## 测试
+
+部分测试需要 Ganache 已启动并且合约已部署。
 
 ```powershell
 cd backend
@@ -231,49 +303,49 @@ python -m tests.test_fingerprint
 python -m tests.test_chain_service
 python -m tests.test_token_service
 python -m tests.test_p02_signing
+python -m tests.test_auth
 ```
 
-## 当前唯一可调用 API
+前端当前以生产构建作为基础校验：
 
-### GET `/api/health`
-
-返回后端、Ganache 和合约状态，例如：
-
-```json
-{
-  "code": 200,
-  "msg": "success",
-  "data": {
-    "status": "running",
-    "ganache_connected": true,
-    "ganache_url": "http://ganache:8545",
-    "block_number": 1,
-    "deployer": "0x...",
-    "contracts": {
-      "edu_token": "0x...",
-      "material_registry": "0x...",
-      "download_log": "0x..."
-    },
-    "material_count": 0,
-    "download_count": 0
-  }
-}
+```powershell
+cd frontend
+npm run build
 ```
 
-后续 API 规划请看 `docs/api_spec.md`。
+## 当前限制与后续计划
 
-## 文档说明
+### 当前限制
 
-- `CLAUDE.md`：面向开发协作的当前项目事实和约束。
-- `docs/architecture.md`：当前架构和已实现数据流。
-- `docs/contracts_spec.md`：当前合约接口。
-- `docs/fingerprint_spec.md`：当前指纹算法。
-- `docs/api_spec.md`：当前可调用 API 与后续路由目标。
-- `docs/data_model.md`：当前链上/链下数据模型。
-- `docs/基础方案.docx`：早期 PPT 方案草稿，已加状态说明；展示时应注意它包含规划内容。
+- 前端七个页面已经完成视觉和基础交互，但大部分业务数据仍为页面内演示数据。
+- 前端登录目前使用演示账号判断，尚未接入真实 Session 登录接口。
+- 资料市场、上传、验证、钱包、审计和状态页尚需逐页替换为真实 API 数据。
+- 页面侧栏和顶栏在各视图中存在重复实现，后续应统一回收至共享组件。
+- 白名单访问策略尚未实现完整业务闭环。
+- 当前用户和私钥配置仅适用于本地 Ganache 演示，不能用于公网或生产环境。
+- 自动化测试尚未覆盖完整的前端到合约端到端流程。
 
-## 项目定位总结
+### 下一阶段优先级
 
-EduChain 的核心不是单纯上传下载文件，而是构建一个可以证明资料来源、检查内容是否被改、并用通证激励贡献的校园资料可信交换原型。
+1. 接入 `/api/auth/login`、`/logout` 和 `/me`，统一前端登录态与路由保护。
+2. 将资料市场、上传和验证页面接入真实资料 API。
+3. 将钱包和审计页面接入链上余额、交易和下载记录。
+4. 将系统状态页接入 `/api/health`，替换静态统计数据。
+5. 抽取统一的后台 Layout、Sidebar、Header、复制按钮和分页组件。
+6. 增加端到端测试、异常状态、加载状态和空状态覆盖。
+7. 清理演示私钥和本地数据，补充生产环境安全配置。
 
-当前最稳妥的表述是：合约、service 层和指纹引擎已经具备基础能力；完整 API 与前端业务页面仍处于下一阶段集成开发。
+## 文档
+
+- `frontend/DESIGN_SYSTEM.md`：前端设计系统与页面规范。
+- `docs/architecture.md`：系统架构与数据流。
+- `docs/api_spec.md`：API 设计与请求响应说明。
+- `docs/contracts_spec.md`：智能合约接口。
+- `docs/fingerprint_spec.md`：指纹算法与相似度规则。
+- `docs/data_model.md`：链上和链下数据模型。
+- `docs/frontend_design_prompt.md`：前端设计稿复刻与开发背景。
+- `CLAUDE.md`：开发协作事实、约束与项目说明。
+
+## 安全说明
+
+仓库中的 Ganache 助记词、演示账户和私钥仅用于本地开发。不要在公网链、测试网资产账户或生产环境中复用这些信息。
