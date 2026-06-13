@@ -19,13 +19,13 @@
       <h1>系统状态</h1>
       <div class="header-actions">
         <button class="icon-button" type="button" aria-label="搜索"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg></button>
-        <div class="chain-status"><span>链状态:</span><span class="status-dot"></span><strong>已连接</strong></div>
+        <div class="chain-status"><span>链状态:</span><span class="status-dot"></span><strong>{{ status.ganacheConnected ? '已连接' : '未连接' }}</strong></div>
         <section class="user-card" aria-label="当前用户">
           <div class="avatar"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></svg></div>
-          <div class="user-main"><strong>张三</strong><span>学号：20240001</span></div>
-          <div class="user-metric"><span>EDU 余额</span><strong>120</strong></div>
-          <div class="user-address"><span>地址</span><strong>0x8f3A...91c2</strong><button type="button" aria-label="复制地址"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2" /><rect x="4" y="4" width="11" height="11" rx="2" /></svg></button></div>
-          <button class="logout-button" type="button" @click="router.push('/login')"><svg viewBox="0 0 24 24"><path d="M10 17 15 12l-5-5" /><path d="M15 12H3" /><path d="M21 19V5a2 2 0 0 0-2-2h-6" /></svg>退出</button>
+          <div class="user-main"><strong>{{ auth.user?.name || '--' }}</strong><span>学号：{{ auth.user?.student_id || '--' }}</span></div>
+          <div class="user-metric"><span>EDU 余额</span><strong>{{ auth.user?.edu_balance ?? '--' }}</strong></div>
+          <div class="user-address"><span>地址</span><strong>{{ truncate(auth.user?.eth_address) }}</strong><button type="button" aria-label="复制地址"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2" /><rect x="4" y="4" width="11" height="11" rx="2" /></svg></button></div>
+          <button class="logout-button" type="button" @click="handleLogout"><svg viewBox="0 0 24 24"><path d="M10 17 15 12l-5-5" /><path d="M15 12H3" /><path d="M21 19V5a2 2 0 0 0-2-2h-6" /></svg>退出</button>
         </section>
       </div>
     </header>
@@ -69,7 +69,7 @@
             <thead><tr><th>项目</th><th>详情</th></tr></thead>
             <tbody>
               <tr><td>后端服务</td><td><span class="ok-dot"></span>运行中 <em>(v1.0.0)</em></td></tr>
-              <tr><td>Ganache URL</td><td><code>http://127.0.0.1:8545</code><button type="button" aria-label="复制 Ganache URL"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2" /><rect x="4" y="4" width="11" height="11" rx="2" /></svg></button></td></tr>
+              <tr><td>Ganache URL</td><td><code>{{ status.ganacheUrl }}</code><button type="button" aria-label="复制 Ganache URL"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2" /><rect x="4" y="4" width="11" height="11" rx="2" /></svg></button></td></tr>
               <tr v-for="item in contractRows" :key="item.label"><td>{{ item.label }}</td><td><code>{{ item.value }}</code><button type="button" :aria-label="`复制${item.label}`"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2" /><rect x="4" y="4" width="11" height="11" rx="2" /></svg></button></td></tr>
               <tr><td>网络</td><td>Ganache（Local）</td></tr>
               <tr><td>链 ID</td><td>1337</td></tr>
@@ -98,18 +98,23 @@
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import api, { formatTime, truncate } from '@/utils/api'
+import { useAuthStore } from '@/stores/auth'
 import logoUrl from '@/assets/images/swjtu-logo-white.png'
 import sidebarArtUrl from '@/assets/images/educhain_white_logo.png'
 
 const router = useRouter()
+const auth = useAuthStore()
 const refreshing = ref(false)
 const status = reactive({
-  blockNumber: 128,
-  materialCount: 128,
-  downloadCount: 256,
-  lastBlockTime: '2026-05-21 14:30:18',
+  blockNumber: '--',
+  materialCount: 0,
+  downloadCount: 0,
+  lastBlockTime: '--',
+  ganacheConnected: false,
+  ganacheUrl: '--',
 })
 const checkRecords = ref([
   { title: '系统健康检查', desc: '后端、Ganache 与合约状态检查', time: '2026-05-21 14:30:18' },
@@ -126,25 +131,40 @@ const navItems = [
   { label: '系统状态', active: true, path: '/status', icon: '<svg viewBox="0 0 24 24"><path d="M3 4h18v14H3z"/><path d="M8 22h8"/><path d="M12 18v4"/><path d="m7 13 3-3 2 2 4-5"/></svg>' },
 ]
 
-const contractRows = [
-  { label: 'Deployer 地址', value: '0x12ab...89ef' },
-  { label: 'EduToken 合约地址', value: '0x3b1C7a2d8E6b4d1F2c9A7eF6dB3eC4Fa1B2d3E4F' },
-  { label: 'MaterialRegistry 合约地址', value: '0x7FAaC9b8E1d4f2A3c6D5e7F90123456789AbCdEf' },
-  { label: 'DownloadLog 合约地址', value: '0x9C0D1e2F3aB4c5D6e7F809abcdef1234567890AB' },
-]
+const contractRows = ref([])
 
-function refreshStatus() {
+async function refreshStatus() {
   refreshing.value = true
-  window.setTimeout(() => {
-    status.blockNumber += 1
-    status.lastBlockTime = '2026-05-21 14:30:48'
+  try {
+    const res = await api.get('/api/health')
+    const data = res.data || {}
+    status.blockNumber = data.block_number ?? '--'
+    status.materialCount = data.material_count || 0
+    status.downloadCount = data.download_count || 0
+    status.lastBlockTime = formatTime(Date.now())
+    status.ganacheConnected = !!data.ganache_connected
+    status.ganacheUrl = data.ganache_url || '--'
+    contractRows.value = [
+      { label: 'Deployer 地址', value: data.deployer || '--' },
+      { label: 'EduToken 合约地址', value: data.contracts?.edu_token || '--' },
+      { label: 'MaterialRegistry 合约地址', value: data.contracts?.material_registry || '--' },
+      { label: 'DownloadLog 合约地址', value: data.contracts?.download_log || '--' },
+    ]
     checkRecords.value = [
       { title: '系统健康检查', desc: '后端、Ganache 与合约状态检查', time: status.lastBlockTime },
       ...checkRecords.value.slice(0, 2),
     ]
+  } finally {
     refreshing.value = false
-  }, 500)
+  }
 }
+
+async function handleLogout() {
+  await auth.logout()
+  router.push('/login')
+}
+
+onMounted(refreshStatus)
 </script>
 
 <style scoped>

@@ -10,6 +10,7 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const res = await api.get('/api/auth/me')
       user.value = res.data
+      await refreshBalance()
     } catch {
       user.value = null
     }
@@ -36,8 +37,8 @@ export const useAuthStore = defineStore('auth', () => {
   async function refreshBalance() {
     if (!user.value) return
     try {
-      const res = await api.get('/api/auth/me')
-      user.value.edu_balance = res.data.edu_balance
+      const res = await api.get('/api/token/balance')
+      user.value.edu_balance = res.data.balance
     } catch { /* ignore */ }
   }
 

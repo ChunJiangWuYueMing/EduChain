@@ -57,16 +57,16 @@
             </svg>
           </div>
           <div class="user-main">
-            <strong>张三</strong>
-            <span>学号：20240001</span>
+            <strong>{{ auth.user?.name || '--' }}</strong>
+            <span>学号：{{ auth.user?.student_id || '--' }}</span>
           </div>
           <div class="user-metric">
             <span>EDU 余额</span>
-            <strong>120</strong>
+            <strong>{{ auth.user?.edu_balance ?? '--' }}</strong>
           </div>
           <div class="user-address">
             <span>地址</span>
-            <strong>0x8f3A...91c2</strong>
+            <strong>{{ truncate(auth.user?.eth_address) }}</strong>
             <button type="button" aria-label="复制地址">
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <rect x="9" y="9" width="11" height="11" rx="2" />
@@ -74,7 +74,7 @@
               </svg>
             </button>
           </div>
-          <button class="logout-button" type="button" @click="router.push('/login')">
+          <button class="logout-button" type="button" @click="handleLogout">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M10 17 15 12l-5-5" />
               <path d="M15 12H3" />
@@ -337,12 +337,15 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import api, { formatTime, policyText, truncate } from '@/utils/api'
+import { useAuthStore } from '@/stores/auth'
 import logoUrl from '@/assets/images/swjtu-logo-white.png'
 import sidebarArtUrl from '@/assets/images/educhain_white_logo.png'
 
 const router = useRouter()
+const auth = useAuthStore()
 
 const navItems = [
   { label: '资料市场', active: true, path: '/market', icon: '<svg viewBox="0 0 24 24"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v5h5"/><path d="M10 13h6"/><path d="M10 17h6"/></svg>' },
@@ -353,84 +356,20 @@ const navItems = [
   { label: '系统状态', active: false, path: '/status', icon: '<svg viewBox="0 0 24 24"><path d="M3 4h18v14H3z"/><path d="M8 22h8"/><path d="M12 18v4"/><path d="m7 13 3-3 2 2 4-5"/></svg>' },
 ]
 
-const materials = [
-  {
-    id: 'MAT_20260521_001',
-    name: '计算机网络期末复习提纲.pdf',
-    course: 'CS201',
-    price: 10,
-    policy: 'same-course',
-    policyText: '同课程',
-    uploader: '0x21B4...9A01',
-    version: 'v1',
-    uploadedAt: '2026-05-21 14:30',
-    status: 'normal',
-    statusText: '正常',
-    sha: 'a9c4...7e21',
-    simhash: '0x91af...4c08',
-    length: '12840',
-  },
-  {
-    id: 'MAT_20260520_008',
-    name: '数据结构习题整理.docx',
-    course: 'CS301',
-    price: 8,
-    policy: 'public',
-    policyText: '公开',
-    uploader: '0x77Aa...13F0',
-    version: 'v2',
-    uploadedAt: '2026-05-20 09:18',
-    status: 'normal',
-    statusText: '正常',
-    sha: '20df...a81b',
-    simhash: '0x32ac...91f2',
-    length: '8640',
-  },
-  {
-    id: 'MAT_20260519_013',
-    name: '高等数学知识点汇总.pdf',
-    course: 'MATH101',
-    price: 0,
-    policy: 'public',
-    policyText: '公开',
-    uploader: '0x3B1C...7D22',
-    version: 'v1',
-    uploadedAt: '2026-05-19 20:10',
-    status: 'normal',
-    statusText: '正常',
-    sha: 'd891...ac43',
-    simhash: '0x8842...cb11',
-    length: '20312',
-  },
-  {
-    id: 'MAT_20260518_020',
-    name: '人工智能导论实验报告模板.docx',
-    course: 'AI202',
-    price: 5,
-    policy: 'same-course',
-    policyText: '同课程',
-    uploader: '0x90CD...1AE8',
-    version: 'v3',
-    uploadedAt: '2026-05-18 17:42',
-    status: 'removed',
-    statusText: '已删除',
-    sha: 'f731...10da',
-    simhash: '0x641d...90be',
-    length: '5912',
-  },
-]
+const materials = ref([])
+const loading = ref(false)
 
 const keyword = ref('')
 const courseFilter = ref('all')
 const policyFilter = ref('all')
 const currentPage = ref(1)
 const pageSize = ref(4)
-const selectedId = ref(materials[0].id)
+const selectedId = ref('')
 const toast = ref('')
 
 const filteredMaterials = computed(() => {
   const normalized = keyword.value.trim().toLowerCase()
-  return materials.filter((item) => {
+  return materials.value.filter((item) => {
     const matchesKeyword = !normalized || item.name.toLowerCase().includes(normalized) || item.course.toLowerCase().includes(normalized)
     const matchesCourse = courseFilter.value === 'all' || item.course === courseFilter.value
     const matchesPolicy = policyFilter.value === 'all' || item.policy === policyFilter.value
@@ -443,7 +382,7 @@ const visibleMaterials = computed(() => {
   const start = (currentPage.value - 1) * pageSize.value
   return filteredMaterials.value.slice(start, start + pageSize.value)
 })
-const totalCount = computed(() => filteredMaterials.value.length === 0 ? 0 : 128)
+const totalCount = computed(() => filteredMaterials.value.length)
 const selectedMaterial = computed(() => filteredMaterials.value.find((item) => item.id === selectedId.value) || filteredMaterials.value[0] || null)
 const detailRows = computed(() => {
   if (!selectedMaterial.value) return []
@@ -488,12 +427,65 @@ function showToast(message) {
 }
 
 function verifyMaterial(item) {
-  showToast(`${item.name} 已通过链上哈希校验`)
+  router.push({ path: '/verify', query: { materialId: item.id } })
 }
 
-function downloadMaterial(item) {
-  showToast(`${item.name} 已加入下载队列`)
+async function downloadMaterial(item) {
+  if (!item) return
+  try {
+    const response = await api.get(`/api/material/${encodeURIComponent(item.id)}/download`)
+    const blob = await response.blob()
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = item.name
+    link.click()
+    URL.revokeObjectURL(url)
+    await auth.refreshBalance()
+    showToast(`${item.name} 下载成功`)
+  } catch (error) {
+    showToast(error.message || '下载失败')
+  }
 }
+
+async function handleLogout() {
+  await auth.logout()
+  router.push('/login')
+}
+
+function mapMaterial(item) {
+  return {
+    id: item.id,
+    name: item.name,
+    course: item.course,
+    price: item.price,
+    policy: item.policy_type === 0 ? 'public' : item.policy_type === 1 ? 'same-course' : 'whitelist',
+    policyText: policyText(item.policy_type),
+    uploader: item.uploader,
+    version: `v${item.version}`,
+    uploadedAt: formatTime(item.timestamp),
+    status: item.deleted ? 'removed' : 'normal',
+    statusText: item.deleted ? '已删除' : '正常',
+    sha: item.sha256_hash,
+    simhash: typeof item.sim_hash === 'number' ? `0x${item.sim_hash.toString(16)}` : item.sim_hash,
+    length: item.text_length,
+  }
+}
+
+async function loadMaterials() {
+  loading.value = true
+  try {
+    const res = await api.get('/api/material/list?page=1&page_size=100')
+    materials.value = (res.data?.items || []).map(mapMaterial)
+    selectedId.value = materials.value[0]?.id || ''
+  } catch (error) {
+    showToast(error.message || '资料加载失败')
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(loadMaterials)
 </script>
 
 <style scoped>

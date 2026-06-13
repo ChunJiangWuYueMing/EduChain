@@ -53,16 +53,16 @@
             </svg>
           </div>
           <div class="user-main">
-            <strong>张三</strong>
-            <span>学号：20240001</span>
+            <strong>{{ auth.user?.name || '--' }}</strong>
+            <span>学号：{{ auth.user?.student_id || '--' }}</span>
           </div>
           <div class="user-metric">
             <span>EDU 余额</span>
-            <strong>120</strong>
+            <strong>{{ auth.user?.edu_balance ?? '--' }}</strong>
           </div>
           <div class="user-address">
             <span>地址</span>
-            <strong>0x8f3A...91c2</strong>
+            <strong>{{ truncate(auth.user?.eth_address) }}</strong>
             <button type="button" aria-label="复制地址">
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <rect x="9" y="9" width="11" height="11" rx="2" />
@@ -70,7 +70,7 @@
               </svg>
             </button>
           </div>
-          <button class="logout-button" type="button" @click="router.push('/login')">
+          <button class="logout-button" type="button" @click="handleLogout">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M10 17 15 12l-5-5" />
               <path d="M15 12H3" />
@@ -269,10 +269,13 @@
 <script setup>
 import { computed, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import api, { formatTime, truncate } from '@/utils/api'
+import { useAuthStore } from '@/stores/auth'
 import logoUrl from '@/assets/images/swjtu-logo-white.png'
 import sidebarArtUrl from '@/assets/images/educhain_white_logo.png'
 
 const router = useRouter()
+const auth = useAuthStore()
 const fileInput = ref(null)
 const selectedFile = ref(null)
 const isDragging = ref(false)
@@ -302,12 +305,20 @@ const steps = [
   { index: 3, title: '上传奖励确认中', desc: '确认并发放上传奖励' },
 ]
 
-const similarMaterials = [
-  { id: 'MAT_20260521_003', name: '机器学习实验指导书_v1.pdf', course: 'CS201', score: '0.00', distance: '0', type: 'same', label: '完全相同' },
-  { id: 'MAT_20260418_011', name: '机器学习实验指导书_旧版.pdf', course: 'CS201', score: '0.93', distance: '6', type: 'high', label: '高度相似' },
-  { id: 'MAT_20260402_006', name: '机器学习实验报告示例.pdf', course: 'CS201', score: '0.78', distance: '14', type: 'derived', label: '衍生资料' },
-  { id: 'MAT_20260330_002', name: '深度学习实验指导书.pdf', course: 'CS302', score: '0.42', distance: '25', type: 'low', label: '差异较大' },
-]
+const similarMaterials = computed(() => (result.value?.similar_materials || []).map((item) => ({
+  id: item.material_id || item.id || '--',
+  name: item.name || '链上相似资料',
+  course: item.course || '--',
+  score: item.similarity ?? item.similarity_pct ?? '--',
+  distance: item.hamming_distance ?? item.distance ?? '--',
+  type: item.classification || 'derived',
+  label: {
+    identical: '完全相同',
+    high: '高度相似',
+    derived: '衍生资料',
+    different: '差异较大',
+  }[item.classification] || '相似资料',
+})))
 
 const canSubmit = computed(() => selectedFile.value && form.course && form.price >= 0)
 const currentStep = computed(() => {
@@ -319,15 +330,15 @@ const currentStep = computed(() => {
 const resultRows = computed(() => {
   const data = result.value
   return [
-    { label: '资料 ID', value: data?.id || '--', copy: !!data },
+    { label: '资料 ID', value: data?.material_id || '--', copy: !!data },
     { label: '资料名称', value: data?.name || '--', copy: !!data },
-    { label: 'SHA-256', value: data?.sha || '--', copy: !!data },
-    { label: 'SimHash', value: data?.simhash || '--', copy: !!data },
-    { label: '文本长度', value: data?.length || '--', copy: !!data },
+    { label: 'SHA-256', value: data?.sha256_hash || '--', copy: !!data },
+    { label: 'SimHash', value: data?.sim_hash || '--', copy: !!data },
+    { label: '文本长度', value: data?.text_length ?? '--', copy: !!data },
     { label: '价格', value: `${form.price || 0} EDU` },
-    { label: '上传奖励', value: data ? '+20 EDU' : '--' },
-    { label: '交易哈希', value: data?.tx || '--', copy: !!data },
-    { label: '上传时间', value: data?.time || '--', copy: !!data },
+    { label: '上传奖励', value: data ? `+${data.upload_reward || 0} EDU` : '--' },
+    { label: '交易哈希', value: data?.tx_hash || '--', copy: !!data },
+    { label: '上传时间', value: data?.uploaded_at || '--', copy: !!data },
     { label: '状态', value: data ? '已存证' : '未上传' },
   ]
 })
@@ -361,26 +372,32 @@ function handleDrop(event) {
   setFile(event.dataTransfer.files?.[0])
 }
 
-function handleUpload() {
+async function handleUpload() {
   if (!canSubmit.value) {
     showToast('请先选择文件并填写课程编号')
     return
   }
 
   loading.value = true
-  window.setTimeout(() => {
-    loading.value = false
+  try {
+    const data = new FormData()
+    data.append('file', selectedFile.value)
+    data.append('name', selectedFile.value.name)
+    data.append('course', form.course)
+    data.append('price', String(form.price))
+    data.append('policy_type', String({ public: 0, 'same-course': 1, whitelist: 2 }[form.policy] ?? 0))
+    const res = await api.postForm('/api/material/upload', data)
     result.value = {
-      id: 'MAT_20260521_008',
-      name: selectedFile.value.name,
-      sha: 'a1d9...f220',
-      simhash: '0x73bd...1a09',
-      length: '18640',
-      tx: '0x73bc...0a91',
-      time: '2026-05-21 15:08:42',
+      ...res.data,
+      uploaded_at: formatTime(Date.now()),
     }
+    await auth.refreshBalance()
     showToast('上传成功，资料已完成链上存证')
-  }, 680)
+  } catch (error) {
+    showToast(error.message || '上传失败')
+  } finally {
+    loading.value = false
+  }
 }
 
 function resetForm() {
@@ -404,6 +421,11 @@ function showToast(message) {
   showToast.timer = window.setTimeout(() => {
     toast.value = ''
   }, 1800)
+}
+
+async function handleLogout() {
+  await auth.logout()
+  router.push('/login')
 }
 </script>
 
