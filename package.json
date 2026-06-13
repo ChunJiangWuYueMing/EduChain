@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "description": "EduChain smart contracts",
   "scripts": {
-    "compile": "node scripts/compile.js"
+    "compile": "node scripts/compile.js",
+    "test:frontend": "node --test frontend/tests/ui-design-guardrails.test.js frontend/tests/material-market-state.test.js",
+    "package:source": "powershell -ExecutionPolicy Bypass -File scripts/package_project.ps1"
   },
   "dependencies": {
     "solc": "^0.8.28",

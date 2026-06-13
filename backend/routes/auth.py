@@ -1,38 +1,68 @@
 """
-routes/auth.py — 用户认证路由
+auth.py — 认证路由
 
-POST /api/auth/login   — 登录（学号 + 密码）
-POST /api/auth/logout  — 登出
-GET  /api/auth/me      — 当前登录用户信息（含 EDU 余额）
+端点:
+  POST /api/auth/register
+  POST /api/auth/login
+  GET  /api/auth/me
+  POST /api/auth/logout
 """
 
-from flask import Blueprint, request, session, g
+from flask import Blueprint, request, session
 
 from services.user_service import user_service
-from services.token_service import token_service
+from services.chain_service import chain_service
 from utils.response import success, bad_request, unauthorized
-from utils.auth import login_required
 
 auth_bp = Blueprint("auth", __name__)
 
 
+@auth_bp.route("/register", methods=["POST"])
+def register():
+    """用户注册"""
+    body = request.get_json(silent=True) or {}
+    student_id = body.get("student_id", "").strip()
+    name = body.get("name", "").strip()
+    password = body.get("password", "").strip()
+
+    if not student_id or not name or not password:
+        return bad_request("学号、姓名、密码不能为空")
+
+    # 学号格式校验
+    err = user_service.validate_student_id(student_id)
+    if err:
+        return bad_request(err)
+
+    try:
+        # 分配 Ganache 账户
+        accounts = chain_service.get_ganache_accounts() if chain_service.is_connected() else []
+        # 跳过 account[0]（deployer），找一个未使用的账户
+        existing_addrs = {u.eth_address.lower() for u in user_service.get_all_users()}
+        assigned_addr = None
+        for i in range(1, len(accounts)):
+            if accounts[i].lower() not in existing_addrs:
+                assigned_addr = accounts[i]
+                break
+        if assigned_addr is None:
+            return bad_request("暂无可用账户，请联系管理员")
+
+        user = user_service.register_user(
+            student_id=student_id,
+            name=name,
+            password=password,
+            eth_address=assigned_addr,
+        )
+        return success(user.to_dict(), "注册成功")
+    except ValueError as e:
+        return bad_request(str(e))
+
+
 @auth_bp.route("/login", methods=["POST"])
 def login():
-    """
-    登录
-
-    请求体 JSON:
-        {"student_id": "2024001", "password": "2024001"}
-
-    成功返回用户信息 + EDU 余额，同时在 session 中写入登录态。
-    首次登录自动发放 100 EDU 注册奖励。
-    """
-    data = request.get_json(silent=True)
-    if not data:
-        return bad_request("请求体必须是 JSON")
-
-    student_id = (data.get("student_id") or "").strip()
-    password = (data.get("password") or "").strip()
+    """用户登录"""
+    body = request.get_json(silent=True) or {}
+    student_id = body.get("student_id", "").strip()
+    password = body.get("password", "").strip()
 
     if not student_id or not password:
         return bad_request("学号和密码不能为空")
@@ -41,62 +71,42 @@ def login():
     if user is None:
         return unauthorized("学号或密码错误")
 
-    # 写入 session
     session["user"] = user.to_session()
 
-    # 查询 EDU 余额
-    balance = 0
-    first_login_reward = None
+    # 自动检测并发放注册奖励（首次登录余额为 0 时 +100 EDU）
+    from services.token_service import token_service
+    edu_balance = 0
     try:
-        balance = token_service.get_balance(user.eth_address)
-
-        # 首次登录（余额为 0）发放注册奖励
-        if balance == 0:
-            reward = token_service.reward_register(user.eth_address)
-            balance = token_service.get_balance(user.eth_address)
-            first_login_reward = reward["amount"]
+        if chain_service.is_connected():
+            edu_balance = chain_service.get_edu_balance(user.eth_address)
+            if edu_balance == 0:
+                token_service.reward_register(user.eth_address)
+                edu_balance = 100
     except Exception:
         pass
 
-    result = user.to_dict()
-    result["edu_balance"] = balance
-    if first_login_reward:
-        result["first_login_reward"] = first_login_reward
+    data = user.to_dict()
+    data["edu_balance"] = edu_balance
+    return success(data, "登录成功")
 
-    return success(result, msg="登录成功")
+
+@auth_bp.route("/me", methods=["GET"])
+def me():
+    """获取当前登录用户信息"""
+    user_data = session.get("user")
+    if user_data is None:
+        return unauthorized("未登录")
+
+    user = user_service.get_user(user_data["student_id"])
+    if user is None:
+        session.pop("user", None)
+        return unauthorized("用户不存在")
+
+    return success(user.to_dict())
 
 
 @auth_bp.route("/logout", methods=["POST"])
 def logout():
-    """登出，清除 session"""
-    session.clear()
-    return success(msg="已登出")
-
-
-@auth_bp.route("/me", methods=["GET"])
-@login_required
-def me():
-    """
-    获取当前登录用户信息
-
-    需要已登录（Cookie 中携带 session）。
-    返回用户基本信息 + 实时 EDU 余额。
-    """
-    user_data = g.user
-    eth_address = user_data.get("eth_address", "")
-
-    balance = 0
-    try:
-        balance = token_service.get_balance(eth_address)
-    except Exception:
-        pass
-
-    result = {
-        "student_id": user_data["student_id"],
-        "name": user_data["name"],
-        "eth_address": eth_address,
-        "courses": user_data.get("courses", []),
-        "role": user_data.get("role", "student"),
-        "edu_balance": balance,
-    }
-    return success(result)
+    """退出登录"""
+    session.pop("user", None)
+    return success(None, "已退出登录")

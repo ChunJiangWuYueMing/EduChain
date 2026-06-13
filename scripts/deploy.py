@@ -33,8 +33,12 @@ DEFAULT_MNEMONIC = "test test test test test test test test test test test junk"
 # === 路径 ===
 SCRIPT_DIR = Path(__file__).parent
 PROJECT_DIR = SCRIPT_DIR.parent
-COMPILED_DIR = PROJECT_DIR / "backend" / "compiled"
-ENV_FILE = PROJECT_DIR / "backend" / ".env"
+BACKEND_DIR = PROJECT_DIR / "backend"
+if not BACKEND_DIR.exists():
+    # In Docker, backend/ is mounted directly at /app.
+    BACKEND_DIR = PROJECT_DIR
+COMPILED_DIR = BACKEND_DIR / "compiled"
+ENV_FILE = BACKEND_DIR / ".env"
 
 
 def load_artifact(contract_name: str) -> dict:
@@ -44,7 +48,7 @@ def load_artifact(contract_name: str) -> dict:
         print(f"❌ 找不到编译产物: {path}")
         print("   请先运行: npm run compile (或 node scripts/compile.js)")
         sys.exit(1)
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         return json.load(f)
 
 
@@ -83,9 +87,12 @@ def derive_keys(mnemonic: str, count: int = 10) -> list[dict]:
             mnemonic,
             account_path=f"m/44'/60'/0'/0/{i}",
         )
+        private_key = acct.key.hex()
+        if not private_key.startswith("0x"):
+            private_key = "0x" + private_key
         keys.append({
             "address": acct.address,
-            "private_key": "0x" + acct.key.hex(),
+            "private_key": private_key,
         })
     return keys
 
@@ -181,7 +188,7 @@ def main():
         env_lines.append(f"ACCOUNT_{i}_ADDRESS={derived[i]['address']}")
         env_lines.append(f"ACCOUNT_{i}_PRIVATE_KEY={derived[i]['private_key']}")
 
-    ENV_FILE.write_text("\n".join(env_lines) + "\n")
+    ENV_FILE.write_text("\n".join(env_lines) + "\n", encoding="utf-8")
     print(f"\n📝 合约地址 + 私钥已写入: {ENV_FILE}")
 
     # --- 验证部署 ---

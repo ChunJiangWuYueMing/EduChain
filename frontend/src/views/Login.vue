@@ -90,7 +90,7 @@
         </button>
 
         <div class="assist-row">
-          <span>测试账号：20240001 / password123（仅供演示使用）</span>
+          <span>测试账号：2023116101 / 2023116101（仅供本地演示）</span>
           <button type="button" class="text-button">忘记密码？</button>
         </div>
 
@@ -106,8 +106,8 @@
             <div>
               <span class="connection-label">后端连接</span>
               <span class="connection-value">
-                <span class="status-dot dot-ok"></span>
-                正常
+                <span class="status-dot" :class="{ 'dot-ok': backendOk }"></span>
+                {{ backendOk ? '正常' : '未连接' }}
               </span>
             </div>
           </div>
@@ -120,8 +120,8 @@
             <div>
               <span class="connection-label">链连接</span>
               <span class="connection-value">
-                <span class="status-dot dot-ok"></span>
-                已连接
+                <span class="status-dot" :class="{ 'dot-ok': chainOk }"></span>
+                {{ chainOk ? '已连接' : '未连接' }}
               </span>
             </div>
           </div>
@@ -166,11 +166,16 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
+import api from '@/utils/api'
 import logoUrl from '@/assets/images/swjtu-logo-white.png'
 import whiteLogoUrl from '@/assets/images/educhain_white_logo.png'
 import mainLogoUrl from '@/assets/images/educhain_main_logo_icon.png'
 
 const router = useRouter()
+const route = useRoute()
+const auth = useAuthStore()
 
 const form = ref({
   studentId: '',
@@ -180,6 +185,8 @@ const passwordInput = ref(null)
 const showPassword = ref(false)
 const loading = ref(false)
 const errorMsg = ref('')
+const backendOk = ref(false)
+const chainOk = ref(false)
 
 const features = [
   {
@@ -203,7 +210,7 @@ function focusPassword() {
   passwordInput.value?.focus()
 }
 
-function handleLogin() {
+async function handleLogin() {
   const studentId = form.value.studentId.trim()
   const password = form.value.password.trim()
 
@@ -213,16 +220,24 @@ function handleLogin() {
   }
 
   loading.value = true
-  window.setTimeout(() => {
+  try {
+    await auth.login(studentId, password)
+    errorMsg.value = ''
+    await router.push(route.query.redirect || '/market')
+  } catch (error) {
+    errorMsg.value = error.message || '登录失败，请检查后端服务'
+  } finally {
     loading.value = false
-    if (studentId === '20240001' && password === 'password123') {
-      errorMsg.value = ''
-      router.push('/market')
-      return
-    }
-    errorMsg.value = '学号或密码错误，请重新输入'
-  }, 240)
+  }
 }
+
+api.get('/api/health').then((res) => {
+  backendOk.value = res.data?.status === 'running'
+  chainOk.value = !!res.data?.ganache_connected
+}).catch(() => {
+  backendOk.value = false
+  chainOk.value = false
+})
 </script>
 
 <style scoped>

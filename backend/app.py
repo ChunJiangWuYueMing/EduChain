@@ -1,72 +1,64 @@
-"""EduChain Flask 应用入口"""
+"""EduChain Flask application entrypoint."""
+
 import os
-from flask import Flask
+
+from flask import Flask, send_from_directory
 from flask_cors import CORS
+
 from config import config
-from utils.response import success, server_error
+from utils.response import success
 
 
 def create_app() -> Flask:
-    """应用工厂"""
+    """Create and configure the Flask application."""
     app = Flask(__name__)
     app.config["SECRET_KEY"] = config.SECRET_KEY
     app.config["MAX_CONTENT_LENGTH"] = config.MAX_CONTENT_LENGTH
 
     CORS(app, supports_credentials=True)
-
-    # 确保上传目录存在
     os.makedirs(config.UPLOAD_FOLDER, exist_ok=True)
 
-    # ---------- 初始化链服务 ----------
     from services.chain_service import chain_service
 
     chain_ok = False
     try:
         chain_service.init_app()
         chain_ok = True
-        app.logger.info("✅ ChainService 初始化成功")
-    except Exception as e:
-        app.logger.warning(f"⚠️  ChainService 初始化失败: {e}")
+        app.logger.info("ChainService initialized")
+    except Exception as exc:
+        app.logger.warning(f"ChainService init failed: {exc}")
 
-    # ---------- 初始化用户服务 + 注入私钥 ----------
     from services.user_service import user_service
 
-    if chain_ok:
-        try:
-            accounts = chain_service.get_ganache_accounts()
-            user_service.init_users(ganache_accounts=accounts)
-            user_count = len(user_service.get_all_users())
-            app.logger.info(f"✅ UserService 初始化成功，加载 {user_count} 个用户")
+    try:
+        accounts = chain_service.get_ganache_accounts() if chain_ok else []
+        user_service.init_users(ganache_accounts=accounts)
+        user_count = len(user_service.get_all_users())
+        app.logger.info(f"UserService initialized with {user_count} users")
 
-            # 将用户私钥注入 chain_service，用于签名交易
-            keys_registered = 0
-            for user in user_service.get_all_users():
-                if user.eth_private_key and user.eth_address:
-                    chain_service.register_user_key(user.eth_address, user.eth_private_key)
-                    keys_registered += 1
+        keys_registered = 0
+        for user in user_service.get_all_users():
+            if user.eth_private_key and user.eth_address:
+                chain_service.register_user_key(user.eth_address, user.eth_private_key)
+                keys_registered += 1
 
-            summary = user_service.key_summary
-            if keys_registered > 0:
-                app.logger.info(
-                    f"✅ 用户签名交易已就绪: "
-                    f"{keys_registered}/{summary['total_users']} 个用户私钥已注入 ChainService"
-                )
-            else:
-                app.logger.warning(
-                    f"⚠️  用户签名交易不可用: 0/{summary['total_users']} 个用户拥有私钥\n"
-                    f"   approve/transfer 等用户侧交易将会失败\n"
-                    f"   请确保: (1) Ganache 使用固定助记词启动 (2) 已运行 deploy.py"
-                )
+        summary = user_service.key_summary
+        if keys_registered > 0:
+            app.logger.info(
+                "Loaded signing keys for %s/%s users",
+                keys_registered,
+                summary["total_users"],
+            )
+        elif summary["total_users"] > 0:
+            app.logger.warning(
+                "No user signing keys are available; user-initiated chain transactions will fail"
+            )
 
-            if summary["without_keys"]:
-                app.logger.info(
-                    f"   缺少私钥的用户: {summary['missing']}"
-                )
+        if summary["without_keys"]:
+            app.logger.info("Users without private keys: %s", summary["missing"])
+    except Exception as exc:
+        app.logger.warning(f"UserService init failed: {exc}")
 
-        except Exception as e:
-            app.logger.warning(f"⚠️  UserService 初始化失败: {e}")
-
-    # ---------- 健康检查（统一响应格式） ----------
     @app.route("/api/health", methods=["GET"])
     def health():
         connected = chain_service.is_connected()
@@ -87,12 +79,11 @@ def create_app() -> Flask:
                 }
                 data["material_count"] = chain_service.get_material_count()
                 data["download_count"] = chain_service.get_download_count()
-            except Exception as e:
-                data["chain_error"] = str(e)
+            except Exception as exc:
+                data["chain_error"] = str(exc)
 
         return success(data)
 
-    # ---------- 注册蓝图 ----------
     from routes.auth import auth_bp
     from routes.material import material_bp
     from routes.token import token_bp
@@ -102,6 +93,17 @@ def create_app() -> Flask:
     app.register_blueprint(material_bp, url_prefix="/api/material")
     app.register_blueprint(token_bp, url_prefix="/api/token")
     app.register_blueprint(audit_bp, url_prefix="/api/audit")
+
+    frontend_dir = os.path.join(os.path.dirname(__file__), "..", "frontend")
+
+    @app.route("/", defaults={"path": ""})
+    @app.route("/<path:path>")
+    def serve_frontend(path: str):
+        if path.startswith("api/"):
+            return success(None, "API route not found", 404)
+        if path and os.path.exists(os.path.join(frontend_dir, path)):
+            return send_from_directory(frontend_dir, path)
+        return send_from_directory(frontend_dir, "index.html")
 
     return app
 

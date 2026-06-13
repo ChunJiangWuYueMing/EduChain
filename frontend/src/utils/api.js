@@ -12,7 +12,11 @@ async function request(url, options = {}) {
   if (options.body instanceof FormData) {
     delete defaults.headers['Content-Type']
   }
-  const res = await fetch(BASE + url, { ...defaults, ...options })
+  const headers = {
+    ...defaults.headers,
+    ...(options.headers || {}),
+  }
+  const res = await fetch(BASE + url, { ...defaults, ...options, headers })
 
   // 文件下载（非 JSON）
   const ct = res.headers.get('Content-Type') || ''
@@ -21,8 +25,18 @@ async function request(url, options = {}) {
     return res
   }
 
-  const json = await res.json()
-  if (json.code >= 400) throw new Error(json.msg || '请求失败')
+  let json
+  try {
+    json = await res.json()
+  } catch {
+    throw new Error(`请求失败（HTTP ${res.status}）`)
+  }
+  if (!res.ok || json.code >= 400) {
+    const error = new Error(json.msg || '请求失败')
+    error.status = res.status
+    error.data = json.data
+    throw error
+  }
   return json
 }
 

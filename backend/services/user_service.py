@@ -105,12 +105,15 @@ class UserService:
 
         for i, u in enumerate(users_data):
             account_index = account_offset + i
-            if account_index >= len(ganache_accounts):
-                break
+            resolved_address = u.get("eth_address", "")
+            if account_index < len(ganache_accounts):
+                resolved_address = ganache_accounts[account_index]
 
-            # 分配地址
-            if not u.get("eth_address"):
-                u["eth_address"] = ganache_accounts[account_index]
+            if not resolved_address:
+                continue
+
+            if resolved_address != u.get("eth_address"):
+                u["eth_address"] = resolved_address
                 needs_save = True
 
             # 分配私钥（按优先级逐级尝试）
@@ -142,13 +145,14 @@ class UserService:
                 student_id=u["student_id"],
                 name=u["name"],
                 password_hash=u["password_hash"],
-                eth_address=u["eth_address"],
+                eth_address=resolved_address,
                 eth_private_key=u.get("eth_private_key", ""),
                 courses=u.get("courses", []),
                 role=u.get("role", "student"),
             )
             self._users[user.student_id] = user
-            self._addr_index[user.eth_address.lower()] = user.student_id
+            if user.eth_address:
+                self._addr_index[user.eth_address.lower()] = user.student_id
 
         # 回写更新后的数据
         if needs_save:
@@ -198,7 +202,10 @@ class UserService:
                     UserService._FALLBACK_MNEMONIC,
                     account_path=f"m/44'/60'/0'/0/{i}",
                 )
-                keys.append("0x" + acct.key.hex())
+                private_key = acct.key.hex()
+                if not private_key.startswith("0x"):
+                    private_key = "0x" + private_key
+                keys.append(private_key)
             return keys
         except Exception:
             return []
@@ -237,6 +244,92 @@ class UserService:
         if check_password_hash(user.password_hash, password):
             return user
         return None
+
+    # ---------- 注册 ----------
+
+    @staticmethod
+    def validate_student_id(student_id: str) -> Optional[str]:
+        """
+        校验学号格式。
+
+        格式: 10位数字, 2023116100
+          - 前4位: 入学年份 (2000-2099)
+          - 第5-7位: 学院代码 (100-999)
+          - 第8-10位: 学生编号 (000-999)
+
+        注意: 转专业不改学号，因此不校验学院代码与当前专业是否匹配。
+
+        Returns:
+            错误消息字符串，格式正确返回 None
+        """
+        import re
+        if not re.match(r'^\d{10}$', student_id):
+            return "学号必须为10位数字"
+        year = int(student_id[:4])
+        if year < 2000 or year > 2099:
+            return "入学年份不合理"
+        college = int(student_id[4:7])
+        if college < 100:
+            return "学院代码不合理"
+        return None
+
+    def register_user(self, student_id: str, name: str, password: str,
+                      eth_address: str, eth_private_key: str = "",
+                      courses: list[str] = None) -> User:
+        """
+        注册新用户。
+
+        Args:
+            student_id:   学号
+            name:         姓名
+            password:     密码明文
+            eth_address:  以太坊地址
+            eth_private_key: 私钥（可选）
+            courses:      选修课程列表
+
+        Returns:
+            新创建的 User
+
+        Raises:
+            ValueError: 学号已存在 / 格式无效
+        """
+        if student_id in self._users:
+            raise ValueError("该学号已注册")
+
+        err = self.validate_student_id(student_id)
+        if err:
+            raise ValueError(err)
+
+        password_hash = generate_password_hash(password)
+        user = User(
+            student_id=student_id,
+            name=name,
+            password_hash=password_hash,
+            eth_address=eth_address,
+            eth_private_key=eth_private_key,
+            courses=courses or [],
+            role="student",
+        )
+        self._users[student_id] = user
+        self._addr_index[eth_address.lower()] = student_id
+        self._persist_users()
+        return user
+
+    def _persist_users(self) -> None:
+        """将当前用户数据写回 users.json"""
+        users_data = []
+        for u in self._users.values():
+            users_data.append({
+                "student_id": u.student_id,
+                "name": u.name,
+                "password_hash": u.password_hash,
+                "eth_address": u.eth_address,
+                "eth_private_key": u.eth_private_key,
+                "courses": u.courses,
+                "role": u.role,
+            })
+        with open(USERS_FILE, "w", encoding="utf-8") as f:
+            json.dump({"users": users_data, "_注释": "学号格式: 10位数字"}, f, ensure_ascii=False, indent=4)
 
     # ---------- 权限 ----------
 

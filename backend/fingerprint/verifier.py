@@ -57,6 +57,11 @@ class VerifyResult:
     similarity_pct: float       # 相似度百分比
     classification: str         # identical/high/derived/different
     is_tampered: bool           # 综合判定：是否被篡改
+    common_keywords: list       # 共同关键词
+    added_keywords: list        # 待验证文件中新增的关键词
+    removed_keywords: list      # 待验证文件中缺失的关键词
+    text_length_local: int      # 本地文件文本长度
+    text_length_chain: int      # 链上记录的文本长度
 
     def to_dict(self) -> dict:
         return {
@@ -69,6 +74,11 @@ class VerifyResult:
             "similarity_percent": round(self.similarity_pct, 2),
             "classification": self.classification,
             "is_tampered": self.is_tampered,
+            "common_keywords": self.common_keywords,
+            "added_keywords": self.added_keywords,
+            "removed_keywords": self.removed_keywords,
+            "text_length_local": self.text_length_local,
+            "text_length_chain": self.text_length_chain,
         }
 
 
@@ -127,6 +137,7 @@ def verify_file_integrity(
     file_path: str,
     chain_sha256_hex: str,
     chain_sim_hash: int,
+    original_text: str = "",
 ) -> VerifyResult:
     """
     验证文件完整性（与链上记录比对）。
@@ -137,6 +148,7 @@ def verify_file_integrity(
         file_path:        待验证文件路径
         chain_sha256_hex: 链上记录的 SHA-256（hex 字符串）
         chain_sim_hash:   链上记录的 SimHash
+        original_text:    原始文件的文本内容（用于关键词对比）
 
     Returns:
         VerifyResult 包含逐层比对结果
@@ -155,6 +167,15 @@ def verify_file_integrity(
     # 综合判定：SHA-256 不一致即为篡改
     is_tampered = not sha256_match
 
+    # 关键词差异分析
+    local_text = extract_text(file_path)
+    local_kw = set(extract_keywords(local_text))
+    original_kw = set(extract_keywords(original_text)) if original_text else set()
+
+    common_keywords = sorted(local_kw & original_kw) if original_kw else []
+    added_keywords = sorted(local_kw - original_kw) if original_kw else []
+    removed_keywords = sorted(original_kw - local_kw) if original_kw else []
+
     return VerifyResult(
         sha256_match=sha256_match,
         sha256_local=fp.sha256_hex,
@@ -165,6 +186,11 @@ def verify_file_integrity(
         similarity_pct=sim_pct,
         classification=classification,
         is_tampered=is_tampered,
+        common_keywords=common_keywords,
+        added_keywords=added_keywords,
+        removed_keywords=removed_keywords,
+        text_length_local=len(local_text),
+        text_length_chain=0,
     )
 
 
@@ -206,6 +232,18 @@ def check_similarity(
     # 按汉明距离排序（最相似的在前）
     hits.sort(key=lambda h: h.hamming_dist)
     return hits
+
+
+def extract_keywords(text: str, top_n: int = 20) -> list[str]:
+    """提取文本的 Top-N 关键词"""
+    if not text or not text.strip():
+        return []
+    try:
+        import jieba.analyse
+        keywords = jieba.analyse.extract_tags(text, topK=top_n)
+        return [kw for kw in keywords if len(kw.strip()) > 1]
+    except Exception:
+        return []
 
 
 # ========== 内部工具 ==========

@@ -1,63 +1,166 @@
 """
-routes/token.py — 通证路由（第7步实现）
+token.py — 通证路由
 
-GET  /api/token/balance       — EDU 余额
-GET  /api/token/transactions  — 交易历史（支持分页）
+端点:
+  GET  /api/token/balance
+  GET  /api/token/allowance
+  POST /api/token/transfer
+  GET  /api/token/history
+  POST /api/token/reward
 """
 
-from flask import Blueprint, g, request
+from flask import Blueprint, request, session, current_app
 
+from config import config
 from services.token_service import token_service
-from utils.response import success, bad_request, server_error
-from utils.auth import login_required
+from services.chain_service import chain_service
+from services.user_service import user_service
+from utils.response import (
+    success, bad_request, unauthorized, forbidden, server_error,
+)
 
 token_bp = Blueprint("token", __name__)
 
 
+def _require_login():
+    user = session.get("user")
+    if user is None:
+        return None, unauthorized("请先登录")
+    return user, None
+
+
 @token_bp.route("/balance", methods=["GET"])
-@login_required
-def balance():
+def get_balance():
     """查询当前用户 EDU 余额"""
+    user, err = _require_login()
+    if err:
+        return err
+
+    address = request.args.get("address", "").strip() or user["eth_address"]
+    balance = token_service.get_balance(address)
+    return success({"address": address, "balance": balance})
+
+
+@token_bp.route("/allowance", methods=["GET"])
+def get_allowance():
+    """查询授权额度"""
+    user, err = _require_login()
+    if err:
+        return err
+
+    spender = request.args.get("spender", config.MATERIAL_REGISTRY_ADDRESS)
+    allowance = token_service.get_allowance(user["eth_address"], spender)
+    return success({
+        "owner": user["eth_address"],
+        "spender": spender,
+        "allowance": allowance,
+    })
+
+
+@token_bp.route("/transfer", methods=["POST"])
+def transfer():
+    """转账 EDU"""
+    user, err = _require_login()
+    if err:
+        return err
+
+    body = request.get_json(silent=True) or {}
+    to_address = body.get("to_address", "").strip()
     try:
-        bal = token_service.get_balance(g.user["eth_address"])
-        return success({"eth_address": g.user["eth_address"], "balance": bal})
-    except Exception as e:
-        return server_error(str(e))
+        amount = int(body.get("amount", 0))
+    except (ValueError, TypeError):
+        return bad_request("转账金额必须为整数")
 
+    if not to_address:
+        return bad_request("接收地址不能为空")
+    if amount <= 0:
+        return bad_request("转账金额必须大于 0")
 
-@token_bp.route("/transactions", methods=["GET"])
-@login_required
-def transactions():
-    """
-    查询当前用户交易历史（支持分页）
-
-    Query Params:
-        page      — 页码，从 1 开始（默认 1）
-        page_size — 每页条数（默认 20，上限 100）
-    """
     try:
-        page = request.args.get("page", 1, type=int)
-        page_size = request.args.get("page_size", 20, type=int)
-
-        if page < 1:
-            return bad_request("page 必须 >= 1")
-        if page_size < 1 or page_size > 100:
-            return bad_request("page_size 必须在 1-100 之间")
-
-        # 先拉全量（链上事件无原生分页），再应用层切片
-        all_tx = token_service.get_transaction_history(
-            g.user["eth_address"], limit=500
-        )
-        total = len(all_tx)
-        start = (page - 1) * page_size
-        end = start + page_size
-        page_data = all_tx[start:end]
-
-        return success({
-            "transactions": page_data,
-            "page": page,
-            "page_size": page_size,
-            "total": total,
-        })
+        receipt = chain_service.transfer_edu(user["eth_address"], to_address, amount)
+    except ValueError as e:
+        return bad_request(str(e))
     except Exception as e:
-        return server_error(str(e))
+        current_app.logger.error(f"转账失败: {e}")
+        return server_error(f"转账失败: {e}")
+
+    return success({
+        "from": user["eth_address"],
+        "to": to_address,
+        "amount": amount,
+        "tx_hash": receipt["transactionHash"].hex(),
+    }, "转账成功")
+
+
+@token_bp.route("/history", methods=["GET"])
+def get_history():
+    """获取交易历史"""
+    user, err = _require_login()
+    if err:
+        return err
+
+    address = request.args.get("address", "").strip() or user["eth_address"]
+    limit = min(200, max(1, int(request.args.get("limit", 50))))
+
+    history = token_service.get_transaction_history(address, limit=limit)
+    return success({"address": address, "transactions": history, "count": len(history)})
+
+
+@token_bp.route("/penalize", methods=["POST"])
+def penalize():
+    """管理员抄袭扣罚"""
+    user, err = _require_login()
+    if err:
+        return err
+
+    if not user_service.is_admin(user["student_id"]):
+        return forbidden("仅管理员可操作")
+
+    body = request.get_json(silent=True) or {}
+    student_id = body.get("student_id", "").strip()
+    try:
+        amount = int(body.get("amount", config.PLAGIARISM_PENALTY))
+    except (ValueError, TypeError):
+        return bad_request("扣罚金额必须为整数")
+
+    if not student_id:
+        return bad_request("目标学号不能为空")
+
+    target = user_service.get_user(student_id)
+    if not target:
+        return bad_request("用户不存在")
+
+    reason = body.get("reason", "confirmed plagiarism")
+
+    try:
+        result = token_service.penalize_plagiarism(target.eth_address, reason[:64])
+    except Exception as e:
+        current_app.logger.error(f"扣罚失败: {e}")
+        return server_error(f"扣罚失败: {e}")
+
+    return success(result, "扣罚成功")
+
+
+@token_bp.route("/reward", methods=["POST"])
+def reward():
+    """管理员发放注册奖励"""
+    user, err = _require_login()
+    if err:
+        return err
+
+    if not user_service.is_admin(user["student_id"]):
+        return forbidden("仅管理员可操作")
+
+    body = request.get_json(silent=True) or {}
+    target_address = body.get("address", "").strip()
+
+    if not target_address:
+        return bad_request("目标地址不能为空")
+
+    try:
+        result = token_service.reward_register(target_address)
+    except Exception as e:
+        current_app.logger.error(f"发放奖励失败: {e}")
+        return server_error(f"发放奖励失败: {e}")
+
+    return success(result, "奖励发放成功")

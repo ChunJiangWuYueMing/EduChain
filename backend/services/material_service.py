@@ -24,7 +24,49 @@ from typing import Optional
 
 from config import config
 from fingerprint.verifier import compute_fingerprint, verify_file_integrity, check_similarity
+from fingerprint.extractor import extract_text
 from services.chain_service import chain_service, MaterialData
+
+# 课程代码 → 课程名称映射
+COURSE_NAME_MAP = {
+    "CS201": "数据结构",
+    "CS301": "操作系统",
+    "CS302": "计算机网络",
+    "MATH101": "高等数学",
+    "PHY101": "大学物理",
+}
+
+# 课程名称 → 代码（用于搜索反向查找）
+COURSE_CODE_MAP = {v: k for k, v in COURSE_NAME_MAP.items()}
+
+
+def _get_course_display(course_code: str) -> str:
+    """返回课程的完整显示名，如 'CS201 数据结构'"""
+    name = COURSE_NAME_MAP.get(course_code, "")
+    return f"{course_code} {name}" if name else course_code
+
+
+def _match_course_filter(material_course: str, filter_value: str) -> bool:
+    """模糊匹配课程筛选：支持代码 'CS201'、名称 '数据结构'、或混合 'CS201 数据结构'"""
+    if not filter_value:
+        return True
+    fv = filter_value.strip().lower()
+    course_lower = material_course.lower()
+    name_lower = COURSE_NAME_MAP.get(material_course, "").lower()
+    return (fv in course_lower or fv in name_lower or
+            fv in f"{course_lower} {name_lower}")
+
+
+def _match_search(material_name: str, material_course: str, search_term: str) -> bool:
+    """模糊搜索：匹配资料名称、课程代码、课程名称"""
+    s = search_term.strip().lower()
+    if not s:
+        return True
+    name_lower = material_name.lower()
+    course_lower = material_course.lower()
+    course_name_lower = COURSE_NAME_MAP.get(material_course, "").lower()
+    return (s in name_lower or s in course_lower or s in course_name_lower or
+            s in f"{course_lower} {course_name_lower}")
 
 
 @dataclass
@@ -151,8 +193,7 @@ class MaterialService:
 
         # --- 重命名文件：加上 material_id 前缀，使下载时能找到 ---
         ext = Path(file_path).suffix
-        safe_name = Path(original_name).stem
-        new_filename = f"{material_id}_{safe_name}{ext}"
+        new_filename = f"{material_id}{ext}"
         new_path = os.path.join(config.UPLOAD_FOLDER, new_filename)
         os.rename(file_path, new_path)
 
@@ -204,15 +245,14 @@ class MaterialService:
             raise ValueError(f"资料已被删除: {material_id}")
 
         # --- 3. 权限判断 ---
-        if downloader_address.lower() == material.uploader.lower():
-            raise ValueError("不能下载自己上传的资料")
+        is_self = downloader_address.lower() == material.uploader.lower()
+        if not is_self:
+            MaterialService._check_access_policy(
+                material, downloader_address, downloader_courses
+            )
 
-        MaterialService._check_access_policy(
-            material, downloader_address, downloader_courses
-        )
-
-        # --- 4. 余额判断 ---
-        if material.price > 0:
+        # --- 4. 余额判断（自己的资料免费下载，跳过扣费）---
+        if not is_self and material.price > 0:
             balance = chain_service.get_edu_balance(downloader_address)
             if balance < material.price:
                 raise ValueError(
@@ -230,27 +270,36 @@ class MaterialService:
         if verification.is_tampered:
             raise ValueError("服务端文件完整性校验失败，文件可能已损坏")
 
-        # --- 6. 通证支付 ---
-        receipt = chain_service.download_material(material_id, downloader_address)
+        # --- 6. 通证支付（自己的资料跳过）---
+        if is_self:
+            receipt = {"transactionHash": bytes(32)}
+        else:
+            receipt = chain_service.download_material(material_id, downloader_address)
 
         # --- 7. 记录下载日志 ---
         file_hash_bytes = bytes.fromhex(
             material.sha256_hash.replace("0x", "").ljust(64, "0")[:64]
         )
+        log_price = 0 if is_self else material.price
         chain_service.record_download(
             material_id=material_id,
             downloader=downloader_address,
             uploader=material.uploader,
-            price=material.price,
+            price=log_price,
             file_hash=file_hash_bytes,
         )
 
         # --- 8. 返回文件信息 ---
+        stored_ext = Path(file_path).suffix
+        download_name = material.name
+        if stored_ext and not Path(download_name).suffix:
+            download_name = f"{download_name}{stored_ext}"
+
         return DownloadResult(
             material_id=material_id,
             file_path=file_path,
-            file_name=material.name,
-            price=material.price,
+            file_name=download_name,
+            price=log_price,
             uploader=material.uploader,
             downloader=downloader_address,
             tx_hash=receipt["transactionHash"].hex(),
@@ -270,14 +319,24 @@ class MaterialService:
             material_id:  要比对的资料 ID
 
         Returns:
-            验证结果 dict
+            验证结果 dict（含关键词差异）
         """
         material = chain_service.query_material(material_id)
         if material is None:
             raise ValueError(f"资料不存在: {material_id}")
 
+        # 尝试读取原始文件文本用于关键词对比
+        original_text = ""
+        orig_path = MaterialService._find_material_file(material_id)
+        if orig_path:
+            try:
+                original_text = extract_text(orig_path)
+            except Exception:
+                pass
+
         result = verify_file_integrity(
-            file_path, material.sha256_hash, material.sim_hash
+            file_path, material.sha256_hash, material.sim_hash,
+            original_text=original_text,
         )
         return result.to_dict()
 
@@ -305,6 +364,14 @@ class MaterialService:
 
         注意：当前从链上逐条读取，数据量大时需要链下缓存优化。
         """
+        if not chain_service.is_connected():
+            return {
+                "total": 0,
+                "page": page,
+                "page_size": page_size,
+                "items": [],
+            }
+
         count = chain_service.get_material_count()
         all_materials = []
 
@@ -318,15 +385,11 @@ class MaterialService:
             except Exception:
                 continue
 
-        # 筛选
+        # 模糊筛选（支持代码/名称/混合搜索）
         if course:
-            all_materials = [m for m in all_materials if m.course == course]
+            all_materials = [m for m in all_materials if _match_course_filter(m.course, course)]
         if search:
-            search_lower = search.lower()
-            all_materials = [
-                m for m in all_materials
-                if search_lower in m.name.lower() or search_lower in m.course.lower()
-            ]
+            all_materials = [m for m in all_materials if _match_search(m.name, m.course, search)]
 
         # 分页
         total = len(all_materials)
@@ -381,8 +444,9 @@ class MaterialService:
                     f"权限不足: 该资料仅限选修 {material.course} 的学生下载"
                 )
         elif material.policy_type == 2:
-            # TODO: 从 policy_value 解析允许的地址列表
-            pass
+            allowed = _parse_whitelist(material.policy_value)
+            if downloader_address.lower() not in allowed:
+                raise ValueError("权限不足: 该资料仅限指定用户下载")
 
     @staticmethod
     def _find_material_file(material_id: str) -> Optional[str]:
@@ -420,6 +484,18 @@ class MaterialService:
             except Exception:
                 continue
         return result
+
+
+def _parse_whitelist(policy_value: str) -> set[str]:
+    """解析白名单地址列表（逗号或换行分隔，统一转小写）"""
+    if not policy_value.strip():
+        return set()
+    addrs = []
+    for part in policy_value.replace("\n", ",").split(","):
+        addr = part.strip()
+        if addr:
+            addrs.append(addr.lower())
+    return set(addrs)
 
 
 # 全局单例

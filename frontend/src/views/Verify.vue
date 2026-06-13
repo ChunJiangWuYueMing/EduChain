@@ -53,16 +53,16 @@
             </svg>
           </div>
           <div class="user-main">
-            <strong>张三</strong>
-            <span>学号：20240001</span>
+            <strong>{{ auth.user?.name || '--' }}</strong>
+            <span>学号：{{ auth.user?.student_id || '--' }}</span>
           </div>
           <div class="user-metric">
             <span>EDU 余额</span>
-            <strong>120</strong>
+            <strong>{{ auth.user?.edu_balance ?? '--' }}</strong>
           </div>
           <div class="user-address">
             <span>地址</span>
-            <strong>0x8f3A...91c2</strong>
+            <strong>{{ truncate(auth.user?.eth_address) }}</strong>
             <button type="button" aria-label="复制地址">
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <rect x="9" y="9" width="11" height="11" rx="2" />
@@ -70,7 +70,7 @@
               </svg>
             </button>
           </div>
-          <button class="logout-button" type="button" @click="router.push('/login')">
+          <button class="logout-button" type="button" @click="handleLogout">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M10 17 15 12l-5-5" />
               <path d="M15 12H3" />
@@ -176,8 +176,8 @@
               </svg>
             </span>
             <div>
-              <strong>疑似篡改 / 内容高度相似</strong>
-              <p>该文件与链上记录存在差异，建议人工复核。</p>
+              <strong>{{ report.is_tampered ? '检测到文件差异' : '文件完整可信' }}</strong>
+              <p>{{ report.is_tampered ? '该文件与链上记录存在差异，建议人工复核。' : 'SHA-256 与链上记录一致。' }}</p>
             </div>
             <time>验证时间：2026-05-21 14:32:18</time>
           </div>
@@ -233,26 +233,21 @@
               <div class="keyword-box added">
                 <header>
                   <strong>新增关键词（本地独有）</strong>
-                  <span>5 个</span>
+                  <span>{{ report.added_keywords?.length || 0 }} 个</span>
                 </header>
                 <p>
-                  <span>区块链共识机制</span>
-                  <span>BFT</span>
-                  <span>权益证明</span>
-                  <span>跨链通信</span>
-                  <span>智能合约安全</span>
+                  <span v-for="keyword in report.added_keywords || []" :key="keyword">{{ keyword }}</span>
+                  <span v-if="!report.added_keywords?.length">无</span>
                 </p>
               </div>
               <div class="keyword-box missing">
                 <header>
                   <strong>缺失关键词（链上存在）</strong>
-                  <span>4 个</span>
+                  <span>{{ report.removed_keywords?.length || 0 }} 个</span>
                 </header>
                 <p>
-                  <span>路由算法</span>
-                  <span>拥塞控制</span>
-                  <span>滑动窗口</span>
-                  <span>停止等待</span>
+                  <span v-for="keyword in report.removed_keywords || []" :key="keyword">{{ keyword }}</span>
+                  <span v-if="!report.removed_keywords?.length">无</span>
                 </p>
               </div>
             </div>
@@ -276,16 +271,20 @@
 
 <script setup>
 import { computed, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
+import api, { truncate } from '@/utils/api'
+import { useAuthStore } from '@/stores/auth'
 import logoUrl from '@/assets/images/swjtu-logo-white.png'
 import sidebarArtUrl from '@/assets/images/educhain_white_logo.png'
 
 const router = useRouter()
+const route = useRoute()
+const auth = useAuthStore()
 const fileInput = ref(null)
 const selectedFile = ref(null)
 const isDragging = ref(false)
 const loading = ref(false)
-const materialId = ref('MAT_20260521_001')
+const materialId = ref(String(route.query.materialId || ''))
 const report = ref(null)
 const toast = ref('')
 const acceptedTypes = '.pdf,.docx,.pptx,.txt,.md'
@@ -316,16 +315,17 @@ const reportRows = computed(() => {
     ]
   }
 
+  const data = report.value
   return [
-    { label: 'SHA-256 是否匹配', kind: 'match' },
-    { label: '本地 SHA-256', value: '7f2a1c9e2b6d4a6f...a9c1b2d3e4f5a6b7c8d9e0f1', copy: true },
-    { label: '链上 SHA-256', value: '0x71aa3f9bd5e64c2f...a9c1b2d3e4f5a6b7c8d9e0f2', copy: true },
-    { label: '本地 SimHash', value: '0x91af3c2d4b6e7f81', copy: true },
-    { label: '链上 SimHash', value: '0x91af3c2d4b6e7f8d', copy: true },
-    { label: '汉明距离', value: '12' },
-    { label: '相似度', value: '95.31%', kind: 'similarity' },
-    { label: '分类', value: 'high', kind: 'tag' },
-    { label: '是否被篡改', kind: 'tampered' },
+    { label: 'SHA-256 是否匹配', value: data.sha256_match ? '是' : '否' },
+    { label: '本地 SHA-256', value: data.sha256_local, copy: true },
+    { label: '链上 SHA-256', value: data.sha256_chain, copy: true },
+    { label: '本地 SimHash', value: data.sim_hash_local, copy: true },
+    { label: '链上 SimHash', value: data.sim_hash_chain, copy: true },
+    { label: '汉明距离', value: data.hamming_dist },
+    { label: '相似度', value: `${data.similarity_pct}%`, kind: 'similarity' },
+    { label: '分类', value: data.classification, kind: 'tag' },
+    { label: '是否被篡改', value: data.is_tampered ? '是' : '否' },
   ]
 })
 
@@ -364,17 +364,24 @@ function clearFile() {
   if (fileInput.value) fileInput.value.value = ''
 }
 
-function handleVerify() {
+async function handleVerify() {
   if (!canVerify.value) {
     showToast('请填写资料 ID 并选择待验证文件')
     return
   }
   loading.value = true
-  window.setTimeout(() => {
+  try {
+    const data = new FormData()
+    data.append('file', selectedFile.value)
+    data.append('material_id', materialId.value)
+    const res = await api.postForm('/api/material/verify', data)
+    report.value = res.data
+    showToast(res.data.is_tampered ? '验证完成：检测到文件差异' : '验证完成：文件与链上记录一致')
+  } catch (error) {
+    showToast(error.message || '验证失败')
+  } finally {
     loading.value = false
-    report.value = { verdict: 'tampered' }
-    showToast('验证完成：检测到疑似篡改风险')
-  }, 560)
+  }
 }
 
 function formatSize(bytes) {
@@ -389,6 +396,11 @@ function showToast(message) {
   showToast.timer = window.setTimeout(() => {
     toast.value = ''
   }, 1800)
+}
+
+async function handleLogout() {
+  await auth.logout()
+  router.push('/login')
 }
 </script>
 

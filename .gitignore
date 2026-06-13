@@ -239,3 +239,8 @@ backend/uploads/*
 ganache_data/
 .DS_Store
 .ai-review/
+
+# Local AI assistant/project instructions
+.agents/
+.claude/
+AGENTS.md

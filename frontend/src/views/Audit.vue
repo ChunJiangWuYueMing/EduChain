@@ -22,10 +22,10 @@
         <div class="chain-status"><span>链状态</span><span class="status-dot"></span><strong>已连接</strong></div>
         <section class="user-card" aria-label="当前用户">
           <div class="avatar"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></svg></div>
-          <div class="user-main"><strong>张三</strong><span>学号：20240001</span></div>
-          <div class="user-metric"><span>EDU 余额</span><strong>120</strong></div>
-          <div class="user-address"><span>地址</span><strong>0x8f3A...91c2</strong><button type="button" aria-label="复制地址"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2" /><rect x="4" y="4" width="11" height="11" rx="2" /></svg></button></div>
-          <button class="logout-button" type="button" @click="router.push('/login')"><svg viewBox="0 0 24 24"><path d="M10 17 15 12l-5-5" /><path d="M15 12H3" /><path d="M21 19V5a2 2 0 0 0-2-2h-6" /></svg>退出</button>
+          <div class="user-main"><strong>{{ auth.user?.name || '--' }}</strong><span>学号：{{ auth.user?.student_id || '--' }}</span></div>
+          <div class="user-metric"><span>EDU 余额</span><strong>{{ auth.user?.edu_balance ?? '--' }}</strong></div>
+          <div class="user-address"><span>地址</span><strong>{{ truncate(auth.user?.eth_address) }}</strong><button type="button" aria-label="复制地址"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2" /><rect x="4" y="4" width="11" height="11" rx="2" /></svg></button></div>
+          <button class="logout-button" type="button" @click="handleLogout"><svg viewBox="0 0 24 24"><path d="M10 17 15 12l-5-5" /><path d="M15 12H3" /><path d="M21 19V5a2 2 0 0 0-2-2h-6" /></svg>退出</button>
         </section>
       </div>
     </header>
@@ -87,7 +87,7 @@
                 <td>{{ record.price }}</td>
                 <td>{{ record.hash }}<button class="copy-button" type="button" aria-label="复制哈希"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2" /><rect x="4" y="4" width="11" height="11" rx="2" /></svg></button></td>
                 <td>{{ record.time }}</td>
-                <td><button class="detail-button" type="button" @click="selectedRecord = record">详情</button></td>
+                <td><button class="detail-button" type="button" @click="loadFullAudit(record)">详情</button></td>
               </tr>
               <tr v-if="pagedRecords.length === 0">
                 <td class="empty" colspan="8">暂无符合条件的审计记录</td>
@@ -112,25 +112,32 @@
       <div class="bottom-tip">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><path d="M12 8h.01" /><path d="M11 12h1v4h1" /></svg>
         当前仅展示与当前账号相关的审计记录；全局审计需管理员权限。
-        <strong v-if="selectedRecord">已选中：{{ selectedRecord.materialId }} · {{ selectedRecord.hash }}</strong>
+        <strong v-if="selectedRecord">
+          已选中：{{ selectedRecord.materialId }}
+          <template v-if="fullAudit"> · 下载 {{ fullAudit.downloads?.length || 0 }} · 修改 {{ fullAudit.updates?.length || 0 }} · 删除 {{ fullAudit.deletions?.length || 0 }}</template>
+        </strong>
       </div>
     </section>
   </main>
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import api, { formatTime, truncate } from '@/utils/api'
+import { useAuthStore } from '@/stores/auth'
 import logoUrl from '@/assets/images/swjtu-logo-white.png'
 import sidebarArtUrl from '@/assets/images/educhain_white_logo.png'
 
 const router = useRouter()
+const auth = useAuthStore()
 const activeTab = ref('downloads')
 const draftKeyword = ref('')
 const keyword = ref('')
 const page = ref(1)
 const pageSize = ref(10)
 const selectedRecord = ref(null)
+const fullAudit = ref(null)
 
 const navItems = [
   { label: '资料市场', active: false, path: '/market', icon: '<svg viewBox="0 0 24 24"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v5h5"/><path d="M10 13h6"/><path d="M10 17h6"/></svg>' },
@@ -148,50 +155,118 @@ const tabs = [
   { key: 'global', label: '全局审计', disabled: true, note: '管理员可见' },
 ]
 
-const downloadRecords = [
-  { id: 1, materialId: 'MAT_20260521_001', name: '计算机网络期末复习提纲.pdf', downloader: '张三', downloaderId: '2024001', uploader: '李四', uploaderId: '2023008', price: 10, hash: '0x21B4...9A01', time: '2026-05-21 14:30:15' },
-  { id: 2, materialId: 'CS301_20260520_002', name: '数据结构习题整理.docx', downloader: '王五', downloaderId: '2023106', uploader: '李四', uploaderId: '2023008', price: 8, hash: '0x77Aa...13F0', time: '2026-05-20 09:18:42' },
-  { id: 3, materialId: 'MATH101_20260519_003', name: '高等数学知识点汇总.pdf', downloader: '赵六', downloaderId: '2023109', uploader: '孙七', uploaderId: '2022102', price: 0, hash: '0x3B1C...7D22', time: '2026-05-19 20:10:03' },
-  { id: 4, materialId: 'AI202_20260518_004', name: '人工智能导论实验报告模板.docx', downloader: '周周', downloaderId: '2024115', uploader: '吴九', uploaderId: '2022106', price: 5, hash: '0x90CD...1AF8', time: '2026-05-18 17:42:31' },
-  { id: 5, materialId: 'CS201_20260518_005', name: '操作系统期末复习要点.pdf', downloader: '钱十', downloaderId: '2024007', uploader: '陈晨', uploaderId: '2022013', price: 10, hash: '0xA1F9...C3D4', time: '2026-05-18 13:05:11' },
-  { id: 6, materialId: 'EE301_20260517_006', name: '数字信号处理课件汇总.pdf', downloader: '吴桐', downloaderId: '2023112', uploader: '郑一', uploaderId: '2022004', price: 12, hash: '0x6E12...8F90', time: '2026-05-17 19:26:48' },
-  { id: 7, materialId: 'PHY201_20260516_007', name: '大学物理期末复习笔记.pdf', downloader: '冯二', downloaderId: '2023103', uploader: '朱三', uploaderId: '2022007', price: 8, hash: '0xD5A3...2B11', time: '2026-05-16 16:54:12' },
-  { id: 8, materialId: 'CS401_20260515_008', name: '计算机组成原理总结.pdf', downloader: '何四', downloaderId: '2022116', uploader: '张三', uploaderId: '2024001', price: 15, hash: '0x4C81...F2E7', time: '2026-05-15 22:31:27' },
-]
-
-const myDownloads = downloadRecords.filter((item) => item.downloader === '张三')
-const myUploads = downloadRecords.filter((item) => item.uploader === '张三')
+const records = ref([])
+const loading = ref(false)
 
 const recordsByTab = computed(() => {
-  if (activeTab.value === 'mine') return myDownloads
-  if (activeTab.value === 'uploads') return myUploads
-  return downloadRecords
+  return records.value
 })
 const filteredRecords = computed(() => {
   const value = keyword.value.toLowerCase()
   if (!value) return recordsByTab.value
   return recordsByTab.value.filter((item) => item.materialId.toLowerCase().includes(value))
 })
-const totalCount = computed(() => activeTab.value === 'downloads' && !keyword.value ? 128 : filteredRecords.value.length)
+const totalCount = computed(() => filteredRecords.value.length)
 const totalPages = computed(() => Math.max(1, Math.ceil(totalCount.value / pageSize.value)))
 const pageButtons = computed(() => Array.from({ length: Math.min(3, totalPages.value) }, (_, index) => index + 1))
 const pagedRecords = computed(() => filteredRecords.value.slice((page.value - 1) * pageSize.value, page.value * pageSize.value))
 
-function selectTab(key) {
+async function selectTab(key) {
   activeTab.value = key
   selectedRecord.value = null
+  fullAudit.value = null
+  await loadRecords()
 }
-function applySearch() {
+async function applySearch() {
   keyword.value = draftKeyword.value
   page.value = 1
+  await loadRecords()
 }
-function resetSearch() {
+async function resetSearch() {
   draftKeyword.value = ''
   keyword.value = ''
   page.value = 1
   selectedRecord.value = null
+  fullAudit.value = null
+  await loadRecords()
 }
 watch([activeTab, pageSize], () => { page.value = 1 })
+
+function mapDownload(record, index) {
+  return {
+    id: `${record.material_id}-${record.timestamp}-${index}`,
+    materialId: record.material_id,
+    name: '链上资料',
+    downloader: truncate(record.downloader),
+    downloaderId: record.downloader,
+    uploader: truncate(record.uploader),
+    uploaderId: record.uploader,
+    price: record.price,
+    hash: truncate(record.file_hash),
+    time: formatTime(record.timestamp),
+  }
+}
+
+function mapUpload(material, index) {
+  return {
+    id: `${material.id}-${index}`,
+    materialId: material.id,
+    name: material.name,
+    downloader: '当前用户',
+    downloaderId: auth.user?.student_id || '--',
+    uploader: truncate(material.uploader),
+    uploaderId: material.uploader,
+    price: material.price,
+    hash: truncate(material.sha256_hash),
+    time: formatTime(material.timestamp),
+  }
+}
+
+async function loadRecords() {
+  if (!auth.user?.eth_address) return
+  loading.value = true
+  try {
+    if (activeTab.value === 'uploads') {
+      const res = await api.get(`/api/audit/materials/user/${encodeURIComponent(auth.user.eth_address)}`)
+      records.value = (res.data.materials || []).map(mapUpload)
+    } else if (activeTab.value === 'downloads') {
+      if (!keyword.value) {
+        records.value = []
+      } else {
+        const res = await api.get(`/api/audit/downloads/material/${encodeURIComponent(keyword.value)}`)
+        records.value = (res.data.records || []).map(mapDownload)
+      }
+    } else {
+      const res = await api.get(`/api/audit/downloads/user/${encodeURIComponent(auth.user.eth_address)}`)
+      records.value = (res.data.records || []).map(mapDownload)
+    }
+  } catch {
+    records.value = []
+  } finally {
+    loading.value = false
+  }
+}
+
+async function loadFullAudit(record) {
+  selectedRecord.value = record
+  fullAudit.value = null
+  try {
+    const res = await api.get(`/api/audit/full/${encodeURIComponent(record.materialId)}`)
+    fullAudit.value = res.data
+  } catch {
+    fullAudit.value = null
+  }
+}
+
+async function handleLogout() {
+  await auth.logout()
+  router.push('/login')
+}
+
+onMounted(() => {
+  activeTab.value = 'mine'
+  loadRecords()
+})
 </script>
 
 <style scoped>

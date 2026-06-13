@@ -1,35 +1,18 @@
 """
-extractor.py — 文本提取器
-
-从不同格式的文件中提取纯文本，供 SimHash 和 SHA-256 计算使用。
-支持格式: .txt, .md, .pdf, .docx, .pptx
+Text extraction helpers for supported file types.
 """
 
-import os
 from pathlib import Path
-from typing import Optional
 
 
 def extract_text(file_path: str) -> str:
-    """
-    根据文件扩展名自动选择提取方式。
-
-    Args:
-        file_path: 文件路径
-
-    Returns:
-        提取的纯文本内容
-
-    Raises:
-        ValueError: 不支持的文件格式
-        FileNotFoundError: 文件不存在
-    """
     path = Path(file_path)
     if not path.exists():
         raise FileNotFoundError(f"文件不存在: {file_path}")
+    if path.stat().st_size == 0:
+        raise ValueError(f"文件内容为空: {file_path}")
 
     ext = path.suffix.lower()
-
     extractors = {
         ".txt": _extract_txt,
         ".md": _extract_txt,
@@ -40,94 +23,85 @@ def extract_text(file_path: str) -> str:
 
     extractor = extractors.get(ext)
     if extractor is None:
-        raise ValueError(f"不支持的文件格式: {ext}（支持: {', '.join(extractors.keys())}）")
+        raise ValueError(
+            f"不支持的文件格式: {ext}，支持: {', '.join(sorted(extractors.keys()))}"
+        )
 
     text = extractor(file_path)
-
-    # 统一清理：去除多余空白行，保留单个换行
     lines = [line.strip() for line in text.splitlines()]
-    cleaned = "\n".join(line for line in lines if line)
-
-    return cleaned
+    return "\n".join(line for line in lines if line)
 
 
 def _extract_txt(file_path: str) -> str:
-    """提取纯文本 / Markdown 文件"""
-    # 尝试多种编码
     for encoding in ("utf-8", "gbk", "gb2312", "latin-1"):
         try:
-            with open(file_path, "r", encoding=encoding) as f:
-                return f.read()
+            with open(file_path, "r", encoding=encoding) as file:
+                return file.read()
         except (UnicodeDecodeError, LookupError):
             continue
-    # 最后用 errors=replace 兜底
-    with open(file_path, "r", encoding="utf-8", errors="replace") as f:
-        return f.read()
+
+    with open(file_path, "r", encoding="utf-8", errors="replace") as file:
+        return file.read()
 
 
 def _extract_pdf(file_path: str) -> str:
-    """提取 PDF 文本"""
     try:
         from PyPDF2 import PdfReader
-    except ImportError:
-        raise ImportError("需要安装 PyPDF2: pip install PyPDF2")
+    except ImportError as exc:
+        raise ImportError("需要安装 PyPDF2") from exc
 
     reader = PdfReader(file_path)
-    pages_text = []
+    parts = []
     for page in reader.pages:
         text = page.extract_text()
         if text:
-            pages_text.append(text)
-
-    return "\n".join(pages_text)
+            parts.append(text)
+    return "\n".join(parts)
 
 
 def _extract_docx(file_path: str) -> str:
-    """提取 Word 文档文本"""
     try:
         from docx import Document
-    except ImportError:
-        raise ImportError("需要安装 python-docx: pip install python-docx")
+    except ImportError as exc:
+        raise ImportError("需要安装 python-docx") from exc
 
-    doc = Document(file_path)
-    paragraphs = []
+    document = Document(file_path)
+    parts = []
 
-    # 提取正文段落
-    for para in doc.paragraphs:
+    for para in document.paragraphs:
         text = para.text.strip()
         if text:
-            paragraphs.append(text)
+            parts.append(text)
 
-    # 提取表格内容
-    for table in doc.tables:
+    for table in document.tables:
         for row in table.rows:
-            row_text = " | ".join(cell.text.strip() for cell in row.cells if cell.text.strip())
+            row_text = " | ".join(
+                cell.text.strip() for cell in row.cells if cell.text.strip()
+            )
             if row_text:
-                paragraphs.append(row_text)
+                parts.append(row_text)
 
-    return "\n".join(paragraphs)
+    return "\n".join(parts)
 
 
 def _extract_pptx(file_path: str) -> str:
-    """提取 PowerPoint 文本"""
     try:
         from pptx import Presentation
-    except ImportError:
-        raise ImportError("需要安装 python-pptx: pip install python-pptx")
+    except ImportError as exc:
+        raise ImportError("需要安装 python-pptx") from exc
 
-    prs = Presentation(file_path)
+    presentation = Presentation(file_path)
     slides_text = []
 
-    for i, slide in enumerate(prs.slides, 1):
+    for slide in presentation.slides:
         texts = []
         for shape in slide.shapes:
-            if shape.has_text_frame:
+            if getattr(shape, "has_text_frame", False):
                 for para in shape.text_frame.paragraphs:
                     text = para.text.strip()
                     if text:
                         texts.append(text)
-            # 提取表格
-            if shape.has_table:
+            if getattr(shape, "has_table", False):
                 for row in shape.table.rows:
                     row_text = " | ".join(
                         cell.text.strip() for cell in row.cells if cell.text.strip()
