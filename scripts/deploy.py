@@ -33,8 +33,12 @@ DEFAULT_MNEMONIC = "test test test test test test test test test test test junk"
 # === 路径 ===
 SCRIPT_DIR = Path(__file__).parent
 PROJECT_DIR = SCRIPT_DIR.parent
-COMPILED_DIR = PROJECT_DIR / "backend" / "compiled"
-ENV_FILE = PROJECT_DIR / "backend" / ".env"
+BACKEND_DIR = PROJECT_DIR / "backend"
+if not BACKEND_DIR.exists():
+    # In Docker, backend/ is mounted directly at /app.
+    BACKEND_DIR = PROJECT_DIR
+COMPILED_DIR = BACKEND_DIR / "compiled"
+ENV_FILE = BACKEND_DIR / ".env"
 
 
 def load_artifact(contract_name: str) -> dict:

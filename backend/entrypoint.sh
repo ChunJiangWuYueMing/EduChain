@@ -2,6 +2,7 @@
 set -e
 
 GANACHE_URL="${GANACHE_URL:-http://ganache:8545}"
+RUNTIME_GANACHE_URL="$GANACHE_URL"
 
 # ===== 1. 等待 Ganache 就绪 =====
 echo "⏳ 等待 Ganache ($GANACHE_URL) 就绪..."
@@ -31,6 +32,8 @@ if [ -f /app/.env ]; then
     set -a
     source /app/.env
     set +a
+    GANACHE_URL="$RUNTIME_GANACHE_URL"
+    export GANACHE_URL
 fi
 
 if [ -n "$EDU_TOKEN_ADDRESS" ]; then
@@ -59,6 +62,8 @@ if [ "$NEED_DEPLOY" = true ]; then
         set -a
         source /app/.env
         set +a
+        GANACHE_URL="$RUNTIME_GANACHE_URL"
+        export GANACHE_URL
         echo "✅ 已加载 .env 环境变量"
     fi
 fi
