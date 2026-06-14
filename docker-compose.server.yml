@@ -1,6 +1,6 @@
 services:
   ganache:
-    image: trufflesuite/ganache:latest
+    image: trufflesuite/ganache:v7.9.2
     restart: unless-stopped
     command:
       - "--server.host=0.0.0.0"
