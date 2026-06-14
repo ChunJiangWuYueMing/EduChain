@@ -35,10 +35,9 @@
             <span>课程编号</span>
             <select v-model="form.course">
               <option value="">选择课程或输入课程编号</option>
-              <option value="CS201">CS201 数据结构</option>
-              <option value="CS301">CS301 操作系统</option>
-              <option value="CS302">CS302 计算机网络</option>
-              <option value="MATH101">MATH101 高等数学</option>
+              <option v-for="course in courseCatalog" :key="course.code" :value="course.code">
+                {{ course.code }} {{ course.name }}
+              </option>
             </select>
           </label>
 
@@ -229,6 +228,7 @@ import { useRouter } from 'vue-router'
 import api, { formatTime } from '@/utils/api'
 import { useAuthStore } from '@/stores/auth'
 import { copyText } from '@/utils/clipboard'
+import { courseCatalog, courseDisplay } from '@/config/courses'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -257,7 +257,7 @@ const steps = [
 const similarMaterials = computed(() => (result.value?.similar_materials || []).map((item) => ({
   id: item.material_id || item.id || '--',
   name: item.material_name || item.name || '链上相似资料',
-  course: item.course || '--',
+  course: courseDisplay(item.course),
   score: item.similarity_percent ?? item.similarity ?? item.similarity_pct ?? '--',
   distance: item.hamming_distance ?? item.distance ?? '--',
   type: item.classification || 'derived',

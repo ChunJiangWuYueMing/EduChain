@@ -1,0 +1,67 @@
+services:
+  ganache:
+    image: trufflesuite/ganache:latest
+    restart: unless-stopped
+    command:
+      - "--server.host=0.0.0.0"
+      - "--server.port=8545"
+      - "--wallet.totalAccounts=10"
+      - "--wallet.defaultBalance=1000"
+      - "--chain.chainId=1337"
+      - "--chain.hardfork=shanghai"
+      - "--miner.blockGasLimit=8000000"
+      - "--database.dbPath=/ganache_data"
+      - "--wallet.mnemonic=${GANACHE_MNEMONIC:-test test test test test test test test test test test junk}"
+    volumes:
+      - ganache_data:/ganache_data
+    networks:
+      - educhain-net
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    restart: unless-stopped
+    environment:
+      GANACHE_URL: http://ganache:8545
+      GANACHE_MNEMONIC: ${GANACHE_MNEMONIC:-test test test test test test test test test test test junk}
+      CHAIN_ID: "1337"
+      SERVER_MODE: "1"
+      FLASK_DEBUG: "0"
+      ALLOW_PUBLIC_REGISTRATION: "false"
+      SECRET_KEY: ${SECRET_KEY:?请在.env.server中设置SECRET_KEY}
+      USERS_FILE: /app/runtime/users.json
+      USERS_SEED_FILE: /app/users.seed.json
+      CONTRACTS_ENV_FILE: /app/runtime/contracts.env
+      UPLOAD_FOLDER: /app/uploads
+      TEST_USER_PASSWORD: ${TEST_USER_PASSWORD:-123456}
+      GUNICORN_THREADS: ${GUNICORN_THREADS:-8}
+      GUNICORN_TIMEOUT: ${GUNICORN_TIMEOUT:-120}
+    volumes:
+      - runtime_data:/app/runtime
+      - upload_data:/app/uploads
+    depends_on:
+      - ganache
+    networks:
+      - educhain-net
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - educhain-net
+
+volumes:
+  ganache_data:
+  runtime_data:
+  upload_data:
+
+networks:
+  educhain-net:
+    driver: bridge

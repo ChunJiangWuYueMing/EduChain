@@ -1,0 +1,76 @@
+{
+  "users": [
+    {
+      "student_id": "2023112379",
+      "name": "唐昊",
+      "gender": "男",
+      "role": "student",
+      "courses": ["BC401", "AI301"],
+      "account_index": 1
+    },
+    {
+      "student_id": "admin_2023112379",
+      "name": "唐昊（管理员）",
+      "gender": "男",
+      "role": "admin",
+      "courses": [],
+      "account_index": 2
+    },
+    {
+      "student_id": "2023112385",
+      "name": "薛雨凇",
+      "gender": "男",
+      "role": "student",
+      "courses": ["BC401", "CS201"],
+      "account_index": 3
+    },
+    {
+      "student_id": "2023112380",
+      "name": "于骐畅",
+      "gender": "女",
+      "role": "student",
+      "courses": ["BC401", "CS302"],
+      "account_index": 4
+    },
+    {
+      "student_id": "2023112318",
+      "name": "周子皓",
+      "gender": "男",
+      "role": "student",
+      "courses": ["BC401", "CS301"],
+      "account_index": 5
+    },
+    {
+      "student_id": "2023112330",
+      "name": "王东涵",
+      "gender": "男",
+      "role": "student",
+      "courses": ["CS302", "DB201"],
+      "account_index": 6
+    },
+    {
+      "student_id": "2023116100",
+      "name": "谢傲宇",
+      "gender": "男",
+      "role": "student",
+      "courses": ["BC401", "DB201"],
+      "account_index": 7
+    },
+    {
+      "student_id": "2023112392",
+      "name": "李子彤",
+      "gender": "女",
+      "role": "student",
+      "courses": ["BC401", "AI301"],
+      "account_index": 8
+    },
+    {
+      "student_id": "2023112317",
+      "name": "方天宇",
+      "gender": "男",
+      "role": "student",
+      "courses": ["BC401", "CS201", "CS301"],
+      "account_index": 9
+    }
+  ]
+}

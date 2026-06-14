@@ -236,6 +236,9 @@ build/
 node_modules/
 backend/uploads/*
 !backend/uploads/.gitkeep
+/backend/runtime/
+/.env.server
+/.env.prod
 ganache_data/
 .DS_Store
 .ai-review/

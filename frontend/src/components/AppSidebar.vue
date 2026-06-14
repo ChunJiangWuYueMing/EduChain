@@ -22,7 +22,7 @@
 
     <button class="shell-chain" type="button" @click="system.refresh">
       <span class="shell-status-dot" :class="{ offline: !system.connected }"></span>
-      <span>{{ system.connected ? 'Ganache Local' : '链连接异常' }}</span>
+      <span>{{ system.connected ? '课程测试 · 链正常' : '课程测试 · 链异常' }}</span>
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M21 12a9 9 0 1 1-2.64-6.36" />
         <path d="M21 4v6h-6" />

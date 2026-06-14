@@ -12,6 +12,7 @@ chain_service.py — Web3 统一封装层
 
 import json
 import os
+import threading
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -22,6 +23,7 @@ from web3 import Web3
 from web3.contract import Contract
 
 from config import config
+from course_catalog import COURSE_CATALOG
 
 
 # ========== 合约 ABI 加载 ==========
@@ -61,16 +63,11 @@ class MaterialData:
     timestamp: int
 
     def to_dict(self) -> dict:
-        # 课程名称映射
-        course_names = {
-            "CS201": "数据结构", "CS301": "操作系统",
-            "CS302": "计算机网络", "MATH101": "高等数学", "PHY101": "大学物理",
-        }
         return {
             "id": self.id,
             "name": self.name,
             "course": self.course,
-            "course_name": course_names.get(self.course, ""),
+            "course_name": COURSE_CATALOG.get(self.course, ""),
             "uploader": self.uploader,
             "sha256_hash": self.sha256_hash,
             "sim_hash": self.sim_hash,
@@ -165,6 +162,8 @@ class ChainService:
         # 用户私钥注册表: address.lower() -> private_key
         # 由 app.py 在初始化 user_service 后注入
         self._user_keys: dict[str, str] = {}
+        self._transaction_locks: dict[str, threading.RLock] = {}
+        self._transaction_locks_guard = threading.Lock()
 
         self._initialized = False
 
@@ -180,7 +179,7 @@ class ChainService:
 
         # 加载 .env（如果存在）
         # .env 在 backend/ 目录下，chain_service.py 在 backend/services/ 下
-        env_path = Path(__file__).parent.parent / ".env"
+        env_path = Path(config.CONTRACTS_ENV_FILE)
         if env_path.exists():
             self._load_env(env_path)
 
@@ -299,6 +298,13 @@ class ChainService:
         if not self._initialized:
             raise RuntimeError("ChainService 未初始化，请先调用 init_app()")
 
+    def _transaction_lock(self, address: str) -> threading.RLock:
+        key = address.lower()
+        with self._transaction_locks_guard:
+            if key not in self._transaction_locks:
+                self._transaction_locks[key] = threading.RLock()
+            return self._transaction_locks[key]
+
     # ---------- 通用交易发送 ----------
 
     def _send_tx(self, contract_fn, from_addr: Optional[str] = None, gas: int = 500_000) -> dict:
@@ -308,14 +314,15 @@ class ChainService:
         适用于：deployer/owner 发起的管理交易、Ganache 开发环境。
         """
         sender = from_addr or self.deployer
-        tx_hash = contract_fn.transact({
-            "from": sender,
-            "gas": gas,
-        })
-        receipt = self.w3.eth.wait_for_transaction_receipt(tx_hash, timeout=30)
-        if receipt["status"] != 1:
-            raise RuntimeError(f"交易失败: tx={tx_hash.hex()}")
-        return dict(receipt)
+        with self._transaction_lock(sender):
+            tx_hash = contract_fn.transact({
+                "from": sender,
+                "gas": gas,
+            })
+            receipt = self.w3.eth.wait_for_transaction_receipt(tx_hash, timeout=30)
+            if receipt["status"] != 1:
+                raise RuntimeError(f"交易失败: tx={tx_hash.hex()}")
+            return dict(receipt)
 
     def _send_signed_tx(
         self,
@@ -336,33 +343,39 @@ class ChainService:
             from_addr:    发送者地址
             gas:          gas 上限
         """
-        nonce = self.w3.eth.get_transaction_count(
-            Web3.to_checksum_address(from_addr)
-        )
-        tx = contract_fn.build_transaction({
-            "from": Web3.to_checksum_address(from_addr),
-            "gas": gas,
-            "gasPrice": self.w3.eth.gas_price,
-            "nonce": nonce,
-            "chainId": config.CHAIN_ID,
-        })
-        signed = self.w3.eth.account.sign_transaction(tx, private_key)
-        raw_tx = getattr(signed, "raw_transaction", None)
-        if raw_tx is None:
-            raw_tx = getattr(signed, "rawTransaction", None)
-        if raw_tx is None:
-            raise AttributeError("SignedTransaction 缺少 raw transaction 字段")
+        checksum_address = Web3.to_checksum_address(from_addr)
+        with self._transaction_lock(checksum_address):
+            nonce = self.w3.eth.get_transaction_count(
+                checksum_address,
+                "pending",
+            )
+            tx = contract_fn.build_transaction({
+                "from": checksum_address,
+                "gas": gas,
+                "gasPrice": self.w3.eth.gas_price,
+                "nonce": nonce,
+                "chainId": config.CHAIN_ID,
+            })
+            signed = self.w3.eth.account.sign_transaction(tx, private_key)
+            raw_tx = getattr(signed, "raw_transaction", None)
+            if raw_tx is None:
+                raw_tx = getattr(signed, "rawTransaction", None)
+            if raw_tx is None:
+                raise AttributeError("SignedTransaction 缺少 raw transaction 字段")
 
-        tx_hash = self.w3.eth.send_raw_transaction(raw_tx)
-        receipt = self.w3.eth.wait_for_transaction_receipt(tx_hash, timeout=30)
-        if receipt["status"] != 1:
-            raise RuntimeError(f"交易失败: tx={tx_hash.hex()}")
-        return dict(receipt)
+            tx_hash = self.w3.eth.send_raw_transaction(raw_tx)
+            receipt = self.w3.eth.wait_for_transaction_receipt(tx_hash, timeout=30)
+            if receipt["status"] != 1:
+                raise RuntimeError(f"交易失败: tx={tx_hash.hex()}")
+            return dict(receipt)
 
     # ---------- 用户私钥管理 ----------
 
     def register_user_key(self, address: str, private_key: str) -> None:
         """注册用户私钥（由 app.py 初始化时调用）"""
+        derived_address = self.w3.eth.account.from_key(private_key).address
+        if derived_address.lower() != address.lower():
+            raise ValueError(f"钱包地址与私钥不匹配: {address}")
         self._user_keys[address.lower()] = private_key
 
     def get_user_key(self, address: str) -> Optional[str]:

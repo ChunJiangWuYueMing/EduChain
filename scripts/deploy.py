@@ -38,7 +38,9 @@ if not BACKEND_DIR.exists():
     # In Docker, backend/ is mounted directly at /app.
     BACKEND_DIR = PROJECT_DIR
 COMPILED_DIR = BACKEND_DIR / "compiled"
-ENV_FILE = BACKEND_DIR / ".env"
+DEFAULT_ENV_FILE = Path(
+    os.getenv("CONTRACTS_ENV_FILE", str(BACKEND_DIR / ".env"))
+)
 
 
 def load_artifact(contract_name: str) -> dict:
@@ -109,7 +111,13 @@ def main():
         default=DEFAULT_MNEMONIC,
         help="Ganache 助记词（必须与 Ganache 启动时一致）",
     )
+    parser.add_argument(
+        "--env-file",
+        default=str(DEFAULT_ENV_FILE),
+        help="合约地址和测试私钥配置的写入路径",
+    )
     args = parser.parse_args()
+    env_file = Path(args.env_file)
 
     # 连接 Ganache
     w3 = Web3(Web3.HTTPProvider(args.ganache_url))
@@ -188,8 +196,9 @@ def main():
         env_lines.append(f"ACCOUNT_{i}_ADDRESS={derived[i]['address']}")
         env_lines.append(f"ACCOUNT_{i}_PRIVATE_KEY={derived[i]['private_key']}")
 
-    ENV_FILE.write_text("\n".join(env_lines) + "\n", encoding="utf-8")
-    print(f"\n📝 合约地址 + 私钥已写入: {ENV_FILE}")
+    env_file.parent.mkdir(parents=True, exist_ok=True)
+    env_file.write_text("\n".join(env_lines) + "\n", encoding="utf-8")
+    print(f"\n📝 合约地址 + 私钥已写入: {env_file}")
 
     # --- 验证部署 ---
     print("\n🔍 验证部署...")

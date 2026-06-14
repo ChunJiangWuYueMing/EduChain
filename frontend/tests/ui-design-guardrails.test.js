@@ -22,6 +22,7 @@ const sidebar = read('src', 'components', 'AppSidebar.vue')
 const navigation = read('src', 'config', 'navigation.js')
 const systemStore = read('src', 'stores', 'system.js')
 const globalStyles = read('src', 'assets', 'styles', 'global.css')
+const courses = read('src', 'config', 'courses.js')
 const readme = read('..', 'README.md')
 
 test('Vite entry mounts the Vue application', () => {
@@ -119,8 +120,27 @@ test('persistent header cannot shift or wrap between business pages', () => {
 
 test('demo credentials are documented without being exposed on the login page', () => {
   assert.doesNotMatch(login, /测试账号：/)
-  assert.doesNotMatch(login, /2023116101/)
+  assert.doesNotMatch(login, /2023112379/)
   assert.match(login, /演示账号信息请查看项目 README/)
   assert.match(readme, /### 演示账号/)
-  assert.match(readme, /2023116101/)
+  assert.match(readme, /2023112379/)
+  assert.match(readme, /admin_2023112379/)
+})
+
+test('course selectors share the six-course joint-test catalog', () => {
+  for (const code of ['BC401', 'CS201', 'CS301', 'CS302', 'DB201', 'AI301']) {
+    assert.match(courses, new RegExp(code))
+  }
+  assert.match(market, /courseCatalog/)
+  assert.match(upload, /courseCatalog/)
+  assert.doesNotMatch(market, /MATH101/)
+  assert.doesNotMatch(upload, /MATH101/)
+})
+
+test('joint-test administration controls call real APIs', () => {
+  assert.match(wallet, /handleAdminAction/)
+  assert.match(wallet, /\/api\/token\/reward/)
+  assert.match(wallet, /\/api\/token\/penalize/)
+  assert.match(market, /deleteMaterial/)
+  assert.match(market, /api\.del\(`\/api\/material\//)
 })

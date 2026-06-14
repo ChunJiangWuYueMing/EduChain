@@ -3,6 +3,13 @@ set -e
 
 GANACHE_URL="${GANACHE_URL:-http://ganache:8545}"
 RUNTIME_GANACHE_URL="$GANACHE_URL"
+CONTRACTS_ENV_FILE="${CONTRACTS_ENV_FILE:-/app/.env}"
+USERS_FILE="${USERS_FILE:-/app/runtime/users.json}"
+USERS_SEED_FILE="${USERS_SEED_FILE:-/app/users.seed.json}"
+GANACHE_MNEMONIC="${GANACHE_MNEMONIC:-test test test test test test test test test test test junk}"
+
+export CONTRACTS_ENV_FILE USERS_FILE USERS_SEED_FILE GANACHE_MNEMONIC
+mkdir -p "$(dirname "$CONTRACTS_ENV_FILE")" "$(dirname "$USERS_FILE")" "${UPLOAD_FOLDER:-/app/uploads}"
 
 # ===== 1. 等待 Ganache 就绪 =====
 echo "⏳ 等待 Ganache ($GANACHE_URL) 就绪..."
@@ -27,10 +34,10 @@ done
 # ===== 2. 检查合约是否已部署且有效 =====
 NEED_DEPLOY=true
 
-# 优先从 .env 读取已有合约地址
-if [ -f /app/.env ]; then
+# 优先从持久化配置读取已有合约地址
+if [ -f "$CONTRACTS_ENV_FILE" ]; then
     set -a
-    source /app/.env
+    source "$CONTRACTS_ENV_FILE"
     set +a
     GANACHE_URL="$RUNTIME_GANACHE_URL"
     export GANACHE_URL
@@ -55,12 +62,15 @@ fi
 
 if [ "$NEED_DEPLOY" = true ]; then
     echo "📦 部署合约..."
-    python /app/scripts/deploy.py --ganache-url "$GANACHE_URL"
+    python /app/scripts/deploy.py \
+        --ganache-url "$GANACHE_URL" \
+        --mnemonic "$GANACHE_MNEMONIC" \
+        --env-file "$CONTRACTS_ENV_FILE"
 
-    # deploy.py 写了 .env，重新加载
-    if [ -f /app/.env ]; then
+    # deploy.py 写了持久化配置，重新加载
+    if [ -f "$CONTRACTS_ENV_FILE" ]; then
         set -a
-        source /app/.env
+        source "$CONTRACTS_ENV_FILE"
         set +a
         GANACHE_URL="$RUNTIME_GANACHE_URL"
         export GANACHE_URL
@@ -68,6 +78,17 @@ if [ "$NEED_DEPLOY" = true ]; then
     fi
 fi
 
-# ===== 3. 启动 Flask =====
+# ===== 3. 初始化测试账号 =====
+python /app/scripts/init_test_users.py
+
+# ===== 4. 启动后端 =====
 echo "🚀 启动 EduChain 后端..."
+if [ "${SERVER_MODE:-0}" = "1" ]; then
+    exec gunicorn \
+        --workers 1 \
+        --threads "${GUNICORN_THREADS:-8}" \
+        --timeout "${GUNICORN_TIMEOUT:-120}" \
+        --bind 0.0.0.0:5000 \
+        "app:create_app()"
+fi
 exec python app.py

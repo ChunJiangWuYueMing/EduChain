@@ -303,7 +303,8 @@ class LocalAppBehaviorTests(unittest.TestCase):
                 self.sent_raw_tx = None
 
             @staticmethod
-            def get_transaction_count(address):
+            def get_transaction_count(address, block_identifier=None):
+                self.assertEqual(block_identifier, "pending")
                 return 7
 
             def send_raw_transaction(self, raw_tx):

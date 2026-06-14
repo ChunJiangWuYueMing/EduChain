@@ -125,15 +125,21 @@ def penalize():
 
     if not student_id:
         return bad_request("目标学号不能为空")
+    if amount <= 0:
+        return bad_request("扣罚金额必须大于 0")
 
     target = user_service.get_user(student_id)
     if not target:
         return bad_request("用户不存在")
 
-    reason = body.get("reason", "confirmed plagiarism")
+    reason = str(body.get("reason") or "confirmed plagiarism").strip()[:64]
 
     try:
-        result = token_service.penalize_plagiarism(target.eth_address, reason[:64])
+        result = token_service.penalize_plagiarism(
+            target.eth_address,
+            reason[:64],
+            amount=amount,
+        )
     except Exception as e:
         current_app.logger.error(f"扣罚失败: {e}")
         return server_error(f"扣罚失败: {e}")
@@ -143,7 +149,7 @@ def penalize():
 
 @token_bp.route("/reward", methods=["POST"])
 def reward():
-    """管理员发放注册奖励"""
+    """管理员发放 EDU 奖励"""
     user, err = _require_login()
     if err:
         return err
@@ -152,13 +158,27 @@ def reward():
         return forbidden("仅管理员可操作")
 
     body = request.get_json(silent=True) or {}
+    student_id = body.get("student_id", "").strip()
     target_address = body.get("address", "").strip()
+    if student_id:
+        target = user_service.get_user(student_id)
+        if not target:
+            return bad_request("用户不存在")
+        target_address = target.eth_address
 
     if not target_address:
-        return bad_request("目标地址不能为空")
+        return bad_request("目标学号或地址不能为空")
 
     try:
-        result = token_service.reward_register(target_address)
+        amount = int(body.get("amount", 10))
+    except (ValueError, TypeError):
+        return bad_request("奖励金额必须为整数")
+    if amount <= 0:
+        return bad_request("奖励金额必须大于 0")
+    reason = str(body.get("reason") or "admin_reward").strip()[:64] or "admin_reward"
+
+    try:
+        result = token_service.reward(target_address, amount, reason)
     except Exception as e:
         current_app.logger.error(f"发放奖励失败: {e}")
         return server_error(f"发放奖励失败: {e}")

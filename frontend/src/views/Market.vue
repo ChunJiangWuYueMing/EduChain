@@ -39,10 +39,9 @@
             <span>课程筛选</span>
             <select v-model="courseFilter">
               <option value="all">全部课程</option>
-              <option value="CS201">CS201</option>
-              <option value="CS301">CS301</option>
-              <option value="MATH101">MATH101</option>
-              <option value="AI202">AI202</option>
+              <option v-for="course in courseCatalog" :key="course.code" :value="course.code">
+                {{ course.code }} {{ course.name }}
+              </option>
             </select>
           </label>
 
@@ -106,7 +105,7 @@
                 @click="selectedId = item.id"
               >
                 <td class="file-name">{{ item.name }}</td>
-                <td>{{ item.course }}</td>
+                <td>{{ courseDisplay(item.course) }}</td>
                 <td>{{ item.price }} EDU</td>
                 <td>
                   <span class="policy-tag" :class="item.policy">{{ item.policyText }}</span>
@@ -246,6 +245,15 @@
               验证此资料
             </button>
             <button type="button" class="link-action" @click="viewAudit(selectedMaterial)">查看下载记录</button>
+            <button
+              v-if="canManageSelected"
+              type="button"
+              class="danger-action"
+              :disabled="selectedMaterial.status !== 'normal'"
+              @click="deleteMaterial(selectedMaterial)"
+            >
+              删除资料
+            </button>
           </div>
         </template>
       </aside>
@@ -261,6 +269,7 @@ import { useRoute, useRouter } from 'vue-router'
 import api, { formatTime, policyText } from '@/utils/api'
 import { useAuthStore } from '@/stores/auth'
 import { copyText } from '@/utils/clipboard'
+import { courseCatalog, courseDisplay } from '@/config/courses'
 
 const route = useRoute()
 const router = useRouter()
@@ -280,7 +289,9 @@ const toast = ref('')
 const filteredMaterials = computed(() => {
   const normalized = keyword.value.trim().toLowerCase()
   return materials.value.filter((item) => {
-    const matchesKeyword = !normalized || item.name.toLowerCase().includes(normalized) || item.course.toLowerCase().includes(normalized)
+    const matchesKeyword = !normalized
+      || item.name.toLowerCase().includes(normalized)
+      || courseDisplay(item.course).toLowerCase().includes(normalized)
     const matchesCourse = courseFilter.value === 'all' || item.course === courseFilter.value
     const matchesPolicy = policyFilter.value === 'all' || item.policy === policyFilter.value
     return matchesKeyword && matchesCourse && matchesPolicy
@@ -294,13 +305,19 @@ const visibleMaterials = computed(() => {
 })
 const totalCount = computed(() => filteredMaterials.value.length)
 const selectedMaterial = computed(() => filteredMaterials.value.find((item) => item.id === selectedId.value) || null)
+const canManageSelected = computed(() => {
+  const item = selectedMaterial.value
+  if (!item || !auth.user) return false
+  return auth.user.role === 'admin'
+    || item.uploader.toLowerCase() === auth.user.eth_address?.toLowerCase()
+})
 const detailRows = computed(() => {
   if (!selectedMaterial.value) return []
   const item = selectedMaterial.value
   return [
     { label: '资料 ID', value: item.id, copy: true },
     { label: '资料名称', value: item.name },
-    { label: '课程', value: item.course },
+    { label: '课程', value: courseDisplay(item.course) },
     { label: '上传者地址', value: item.uploader, copy: true },
     { label: 'SHA-256', value: item.sha, copy: true },
     { label: 'SimHash', value: item.simhash, copy: true },
@@ -371,6 +388,17 @@ async function downloadMaterial(item) {
     showToast(`${item.name} 下载成功`)
   } catch (error) {
     showToast(error.message || '下载失败')
+  }
+}
+
+async function deleteMaterial(item) {
+  if (!item || !window.confirm(`确认删除资料“${item.name}”？该操作会写入链上审计记录。`)) return
+  try {
+    await api.del(`/api/material/${encodeURIComponent(item.id)}`)
+    showToast(`${item.name} 已删除`)
+    await loadMaterials()
+  } catch (error) {
+    showToast(error.message || '删除失败')
   }
 }
 
@@ -1294,6 +1322,21 @@ dd svg {
   background: transparent;
   border: none;
   font-weight: 700;
+}
+
+.danger-action {
+  width: 100%;
+  height: 40px;
+  color: #b42318;
+  background: #fff5f5;
+  border: 1px solid #f1b5b0;
+  border-radius: 7px;
+  font-weight: 800;
+}
+
+.danger-action:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
 }
 
 .toast {

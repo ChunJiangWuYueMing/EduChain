@@ -13,9 +13,19 @@ def create_app() -> Flask:
     """Create and configure the Flask application."""
     app = Flask(__name__)
     app.config["SECRET_KEY"] = config.SECRET_KEY
-    app.config["MAX_CONTENT_LENGTH"] = config.MAX_CONTENT_LENGTH
+    app.config.update(
+        MAX_CONTENT_LENGTH=config.MAX_CONTENT_LENGTH,
+        SESSION_COOKIE_HTTPONLY=True,
+        SESSION_COOKIE_SAMESITE="Lax",
+    )
 
-    CORS(app, supports_credentials=True)
+    cors_origins = [
+        origin.strip()
+        for origin in config.CORS_ORIGINS.split(",")
+        if origin.strip()
+    ]
+    if cors_origins:
+        CORS(app, supports_credentials=True, origins=cors_origins)
     os.makedirs(config.UPLOAD_FOLDER, exist_ok=True)
 
     from services.chain_service import chain_service
@@ -26,6 +36,8 @@ def create_app() -> Flask:
         chain_ok = True
         app.logger.info("ChainService initialized")
     except Exception as exc:
+        if config.SERVER_MODE:
+            raise
         app.logger.warning(f"ChainService init failed: {exc}")
 
     from services.user_service import user_service
@@ -57,15 +69,22 @@ def create_app() -> Flask:
         if summary["without_keys"]:
             app.logger.info("Users without private keys: %s", summary["missing"])
     except Exception as exc:
+        if config.SERVER_MODE:
+            raise
         app.logger.warning(f"UserService init failed: {exc}")
 
     @app.route("/api/health", methods=["GET"])
     def health():
         connected = chain_service.is_connected()
+        user_summary = user_service.get_summary()
         data = {
             "status": "running",
+            "network": "ganache",
             "ganache_connected": connected,
+            "chain_connected": connected,
             "ganache_url": config.GANACHE_URL,
+            "contracts_ready": False,
+            **user_summary,
         }
 
         if connected:
@@ -78,6 +97,7 @@ def create_app() -> Flask:
                     "material_registry": config.MATERIAL_REGISTRY_ADDRESS,
                     "download_log": config.DOWNLOAD_LOG_ADDRESS,
                 }
+                data["contracts_ready"] = all(data["contracts"].values())
                 data["material_count"] = chain_service.get_material_count()
                 data["download_count"] = chain_service.get_download_count()
             except Exception as exc:

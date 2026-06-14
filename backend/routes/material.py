@@ -18,6 +18,7 @@ import uuid
 from flask import Blueprint, current_app, request, send_file, session
 
 from config import config
+from course_catalog import COURSE_CATALOG
 from services.material_service import material_service
 from utils.response import (
     bad_request,
@@ -112,6 +113,8 @@ def upload():
     course = request.form.get("course", "").strip()
     if not course:
         return bad_request("所属课程不能为空")
+    if course not in COURSE_CATALOG:
+        return bad_request("课程编号无效")
 
     try:
         policy_type = int(request.form.get("policy_type", 0))
@@ -250,6 +253,8 @@ def update_material(material_id):
     body = request.get_json(silent=True) or {}
     name = body.get("name", "").strip() or material["name"]
     course = body.get("course", "").strip() or material["course"]
+    if course not in COURSE_CATALOG:
+        return bad_request("课程编号无效")
     try:
         policy_type = int(body.get("policy_type", material["policy_type"]))
         price = int(body.get("price", material["price"]))

@@ -1,6 +1,16 @@
 """EduChain 全局配置"""
 import os
 from dataclasses import dataclass, field
+from pathlib import Path
+
+
+BASE_DIR = Path(__file__).resolve().parent
+
+
+def env_bool(name: str, default: bool) -> bool:
+    return os.getenv(name, "true" if default else "false").strip().lower() in {
+        "1", "true", "yes", "on",
+    }
 
 
 @dataclass
@@ -9,12 +19,28 @@ class Config:
 
     # --- Flask ---
     SECRET_KEY: str = os.getenv("SECRET_KEY", "educhain-dev-secret-key-change-in-prod")
-    DEBUG: bool = os.getenv("FLASK_DEBUG", "1") == "1"
+    DEBUG: bool = env_bool("FLASK_DEBUG", True)
+    SERVER_MODE: bool = env_bool("SERVER_MODE", False)
+    ALLOW_PUBLIC_REGISTRATION: bool = env_bool("ALLOW_PUBLIC_REGISTRATION", True)
+    CORS_ORIGINS: str = os.getenv("CORS_ORIGINS", "")
 
     # --- 文件上传 ---
-    UPLOAD_FOLDER: str = os.path.join(os.path.dirname(__file__), "uploads")
+    UPLOAD_FOLDER: str = os.getenv("UPLOAD_FOLDER", str(BASE_DIR / "uploads"))
     MAX_CONTENT_LENGTH: int = 50 * 1024 * 1024  # 50 MB
     ALLOWED_EXTENSIONS: set = field(default_factory=lambda: {"pdf", "docx", "pptx", "txt", "md"})
+
+    # --- 持久化运行时数据 ---
+    USERS_FILE: str = os.getenv("USERS_FILE", str(BASE_DIR / "runtime" / "users.json"))
+    USERS_SEED_FILE: str = os.getenv("USERS_SEED_FILE", str(BASE_DIR / "users.seed.json"))
+    CONTRACTS_ENV_FILE: str = os.getenv(
+        "CONTRACTS_ENV_FILE",
+        str(BASE_DIR / ".env"),
+    )
+    TEST_USER_PASSWORD: str = os.getenv("TEST_USER_PASSWORD", "123456")
+    GANACHE_MNEMONIC: str = os.getenv(
+        "GANACHE_MNEMONIC",
+        "test test test test test test test test test test test junk",
+    )
 
     # --- Ganache / Web3 ---
     GANACHE_URL: str = os.getenv("GANACHE_URL", "http://127.0.0.1:8545")

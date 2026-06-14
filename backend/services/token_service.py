@@ -6,6 +6,7 @@ token_service.py — 通证业务逻辑层
 """
 
 from dataclasses import dataclass
+import threading
 from typing import Optional
 
 from config import config
@@ -35,6 +36,17 @@ class TokenTransaction:
 
 class TokenService:
     """通证业务服务（纯通证操作，不编排资料业务）"""
+
+    def __init__(self):
+        self._reward_locks: dict[str, threading.Lock] = {}
+        self._reward_locks_guard = threading.Lock()
+
+    def _reward_lock(self, address: str) -> threading.Lock:
+        key = address.lower()
+        with self._reward_locks_guard:
+            if key not in self._reward_locks:
+                self._reward_locks[key] = threading.Lock()
+            return self._reward_locks[key]
 
     # ---------- 查询 ----------
 
@@ -69,10 +81,52 @@ class TokenService:
             "block": receipt["blockNumber"],
         }
 
+    @staticmethod
+    def reward(user_address: str, amount: int, reason: str = "admin_reward") -> dict:
+        receipt = chain_service.mint_edu(
+            to=user_address,
+            amount=amount,
+            reason=reason,
+        )
+        return {
+            "rewarded": user_address,
+            "amount": amount,
+            "reason": reason,
+            "tx_hash": receipt["transactionHash"].hex(),
+            "block": receipt["blockNumber"],
+        }
+
+    def ensure_register_reward(self, user, user_service) -> tuple[int, int]:
+        """Grant the one-time student login reward safely.
+
+        Returns (current_balance, newly_granted_amount).
+        """
+        if user.role != "student":
+            return chain_service.get_edu_balance(user.eth_address), 0
+
+        with self._reward_lock(user.eth_address):
+            current = user_service.get_user(user.student_id)
+            balance = chain_service.get_edu_balance(user.eth_address)
+            if current is None or current.register_reward_granted:
+                return balance, 0
+
+            granted = 0
+            if balance == 0:
+                result = self.reward_register(user.eth_address)
+                granted = result["amount"]
+                balance = chain_service.get_edu_balance(user.eth_address)
+
+            user_service.mark_register_reward_granted(user.student_id)
+            return balance, granted
+
     # ---------- 抄袭扣罚 ----------
 
     @staticmethod
-    def penalize_plagiarism(uploader_address: str, material_id: str) -> dict:
+    def penalize_plagiarism(
+        uploader_address: str,
+        material_id: str,
+        amount: Optional[int] = None,
+    ) -> dict:
         """
         抄袭扣罚：销毁上传者 50 EDU
 
@@ -84,7 +138,10 @@ class TokenService:
             扣罚详情
         """
         balance = chain_service.get_edu_balance(uploader_address)
-        actual_penalty = min(config.PLAGIARISM_PENALTY, balance)
+        requested_penalty = (
+            config.PLAGIARISM_PENALTY if amount is None else amount
+        )
+        actual_penalty = min(requested_penalty, balance)
 
         if actual_penalty > 0:
             receipt = chain_service.burn_edu(

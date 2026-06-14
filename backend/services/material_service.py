@@ -23,27 +23,14 @@ from pathlib import Path
 from typing import Optional
 
 from config import config
+from course_catalog import COURSE_CATALOG, course_display
 from fingerprint.verifier import compute_fingerprint, verify_file_integrity, check_similarity
 from fingerprint.extractor import extract_text
 from services.chain_service import chain_service, MaterialData
 
-# 课程代码 → 课程名称映射
-COURSE_NAME_MAP = {
-    "CS201": "数据结构",
-    "CS301": "操作系统",
-    "CS302": "计算机网络",
-    "MATH101": "高等数学",
-    "PHY101": "大学物理",
-}
-
-# 课程名称 → 代码（用于搜索反向查找）
-COURSE_CODE_MAP = {v: k for k, v in COURSE_NAME_MAP.items()}
-
-
 def _get_course_display(course_code: str) -> str:
     """返回课程的完整显示名，如 'CS201 数据结构'"""
-    name = COURSE_NAME_MAP.get(course_code, "")
-    return f"{course_code} {name}" if name else course_code
+    return course_display(course_code)
 
 
 def _match_course_filter(material_course: str, filter_value: str) -> bool:
@@ -52,7 +39,7 @@ def _match_course_filter(material_course: str, filter_value: str) -> bool:
         return True
     fv = filter_value.strip().lower()
     course_lower = material_course.lower()
-    name_lower = COURSE_NAME_MAP.get(material_course, "").lower()
+    name_lower = COURSE_CATALOG.get(material_course, "").lower()
     return (fv in course_lower or fv in name_lower or
             fv in f"{course_lower} {name_lower}")
 
@@ -64,7 +51,7 @@ def _match_search(material_name: str, material_course: str, search_term: str) ->
         return True
     name_lower = material_name.lower()
     course_lower = material_course.lower()
-    course_name_lower = COURSE_NAME_MAP.get(material_course, "").lower()
+    course_name_lower = COURSE_CATALOG.get(material_course, "").lower()
     return (s in name_lower or s in course_lower or s in course_name_lower or
             s in f"{course_lower} {course_name_lower}")
 

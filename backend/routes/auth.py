@@ -10,9 +10,10 @@ auth.py — 认证路由
 
 from flask import Blueprint, request, session
 
+from config import config
 from services.user_service import user_service
 from services.chain_service import chain_service
-from utils.response import success, bad_request, unauthorized
+from utils.response import success, bad_request, forbidden, unauthorized
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -20,6 +21,9 @@ auth_bp = Blueprint("auth", __name__)
 @auth_bp.route("/register", methods=["POST"])
 def register():
     """用户注册"""
+    if not config.ALLOW_PUBLIC_REGISTRATION:
+        return forbidden("当前为课程测试环境，账号已由管理员统一创建。")
+
     body = request.get_json(silent=True) or {}
     student_id = body.get("student_id", "").strip()
     name = body.get("name", "").strip()
@@ -73,20 +77,27 @@ def login():
 
     session["user"] = user.to_session()
 
-    # 自动检测并发放注册奖励（首次登录余额为 0 时 +100 EDU）
+    # 学生首次登录奖励。管理员不参与，且并发登录只会发放一次。
     from services.token_service import token_service
     edu_balance = 0
+    first_login_reward = 0
     try:
         if chain_service.is_connected():
+            edu_balance, first_login_reward = token_service.ensure_register_reward(
+                user,
+                user_service,
+            )
+    except Exception as exc:
+        from flask import current_app
+        current_app.logger.error("首次登录奖励处理失败: %s", exc)
+        try:
             edu_balance = chain_service.get_edu_balance(user.eth_address)
-            if edu_balance == 0:
-                token_service.reward_register(user.eth_address)
-                edu_balance = 100
-    except Exception:
-        pass
+        except Exception:
+            edu_balance = 0
 
     data = user.to_dict()
     data["edu_balance"] = edu_balance
+    data["first_login_reward"] = first_login_reward
     return success(data, "登录成功")
 
 
@@ -102,7 +113,12 @@ def me():
         session.pop("user", None)
         return unauthorized("用户不存在")
 
-    return success(user.to_dict())
+    data = user.to_dict()
+    try:
+        data["edu_balance"] = chain_service.get_edu_balance(user.eth_address)
+    except Exception:
+        data["edu_balance"] = 0
+    return success(data)
 
 
 @auth_bp.route("/logout", methods=["POST"])
