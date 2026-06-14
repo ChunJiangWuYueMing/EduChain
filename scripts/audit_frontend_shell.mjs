@@ -102,21 +102,40 @@ async function collect(cdp, route, viewport) {
     cdp,
     `(() => {
       const roundedRect = (selector) => {
-        const rect = document.querySelector(selector).getBoundingClientRect()
+        const element = document.querySelector(selector)
+        if (!element) return null
+        const rect = element.getBoundingClientRect()
         return Object.fromEntries(
           ['x', 'y', 'width', 'height'].map((key) => [key, Math.round(rect[key])])
         )
+      }
+      const lineCount = (selector) => {
+        const element = document.querySelector(selector)
+        if (!element) return null
+        const range = document.createRange()
+        range.selectNodeContents(element)
+        return range.getClientRects().length
       }
       return {
         route: ${JSON.stringify(route)},
         viewport: ${JSON.stringify(viewport)},
         sidebar: roundedRect('.shell-sidebar'),
         header: roundedRect('.shell-header'),
+        title: roundedRect('.shell-title'),
+        actions: roundedRect('.shell-actions'),
+        search: roundedRect('.global-search-trigger'),
+        chainStatus: roundedRect('.shell-chain-status'),
+        chainLabel: roundedRect('.shell-chain-status > span'),
+        chainValue: roundedRect('.shell-chain-status strong'),
+        chainLabelLines: lineCount('.shell-chain-status > span'),
         userCard: roundedRect('.shell-user-card'),
         navSignature: Array.from(document.querySelectorAll('.shell-nav-item'))
           .map((item) => item.innerHTML.replace(/\\s+/g, ' ').trim())
           .join('|'),
         activeLinks: document.querySelectorAll('.shell-nav-item.router-link-active').length,
+        clientWidth: document.documentElement.clientWidth,
+        scrollHeight: document.documentElement.scrollHeight,
+        verticallyScrollable: document.documentElement.scrollHeight > window.innerHeight,
         horizontalOverflow: document.documentElement.scrollWidth > window.innerWidth,
         scrollWidth: document.documentElement.scrollWidth,
         innerWidth: window.innerWidth,
@@ -133,7 +152,6 @@ async function main() {
     [
       '--headless=new',
       '--disable-gpu',
-      '--hide-scrollbars',
       '--no-first-run',
       '--no-default-browser-check',
       '--remote-allow-origins=*',
@@ -208,7 +226,16 @@ async function main() {
       const baseline = baselineByViewport.get(key)
       if (!baseline) baselineByViewport.set(key, result)
       else {
-        for (const field of ['sidebar', 'header', 'userCard', 'navSignature']) {
+        for (const field of [
+          'sidebar',
+          'header',
+          'title',
+          'actions',
+          'search',
+          'chainStatus',
+          'userCard',
+          'navSignature',
+        ]) {
           if (JSON.stringify(result[field]) !== JSON.stringify(baseline[field])) {
             failures.push(`${key} ${result.route}: ${field} changed between routes`)
           }
@@ -221,6 +248,9 @@ async function main() {
         failures.push(
           `${key} ${result.route}: horizontal overflow ${result.scrollWidth}px > ${result.innerWidth}px`,
         )
+      }
+      if ((result.chainLabelLines ?? 0) > 1) {
+        failures.push(`${key} ${result.route}: chain status label wraps`)
       }
       if (result.errors.length) {
         failures.push(`${key} ${result.route}: browser errors ${result.errors.join('; ')}`)

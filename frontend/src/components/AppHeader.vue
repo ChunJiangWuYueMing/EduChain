@@ -173,6 +173,8 @@ async function handleLogout() {
 }
 
 .shell-title {
+  width: 128px;
+  flex: 0 0 128px;
   min-width: 128px;
 }
 
@@ -191,6 +193,7 @@ async function handleLogout() {
 
 .shell-actions {
   display: flex;
+  flex: 0 0 auto;
   align-items: center;
   gap: 12px;
 }
@@ -212,6 +215,7 @@ async function handleLogout() {
 
 .global-search-trigger {
   width: 112px;
+  flex: 0 0 112px;
 }
 
 .global-search-trigger svg {
@@ -231,9 +235,17 @@ async function handleLogout() {
 }
 
 .shell-chain-status {
-  width: 124px;
+  width: 136px;
+  flex: 0 0 136px;
+  padding: 0;
   border-color: transparent;
   background: transparent;
+  white-space: nowrap;
+}
+
+.shell-chain-status > span,
+.shell-chain-status i {
+  flex: 0 0 auto;
 }
 
 .shell-chain-status i {
@@ -256,6 +268,7 @@ async function handleLogout() {
 
 .shell-user-card {
   display: grid;
+  flex: 0 0 516px;
   grid-template-columns: 48px 126px 96px 168px 78px;
   width: 516px;
   min-height: 58px;
@@ -500,6 +513,7 @@ async function handleLogout() {
 @media (max-width: 1320px) {
   .global-search-trigger {
     width: 44px;
+    flex-basis: 44px;
   }
 
   .global-search-trigger span,
@@ -509,6 +523,7 @@ async function handleLogout() {
 
   .shell-chain-status {
     width: 92px;
+    flex-basis: 92px;
   }
 }
 </style>

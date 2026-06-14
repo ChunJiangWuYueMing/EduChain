@@ -90,7 +90,6 @@
         </button>
 
         <div class="assist-row">
-          <span>测试账号：2023116101 / 2023116101（仅供本地演示）</span>
           <button type="button" class="text-button" @click="showPasswordHelp">忘记密码？</button>
         </div>
         <p v-if="assistMsg" class="assist-message">{{ assistMsg }}</p>
@@ -234,7 +233,7 @@ async function handleLogin() {
 }
 
 function showPasswordHelp() {
-  assistMsg.value = '当前为本地课程演示系统，不提供在线找回。请使用页面中的测试账号，或联系项目管理员重置本地账号。'
+  assistMsg.value = '当前为本地课程演示系统，不提供在线找回。演示账号信息请查看项目 README，或联系项目管理员重置本地账号。'
 }
 
 api.get('/api/health').then((res) => {
@@ -543,7 +542,7 @@ api.get('/api/health').then((res) => {
 .assist-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 16px;
   margin-top: 22px;
   color: #728096;

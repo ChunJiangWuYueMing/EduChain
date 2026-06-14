@@ -21,6 +21,8 @@ const header = read('src', 'components', 'AppHeader.vue')
 const sidebar = read('src', 'components', 'AppSidebar.vue')
 const navigation = read('src', 'config', 'navigation.js')
 const systemStore = read('src', 'stores', 'system.js')
+const globalStyles = read('src', 'assets', 'styles', 'global.css')
+const readme = read('..', 'README.md')
 
 test('Vite entry mounts the Vue application', () => {
   assert.match(index, /id="app"/)
@@ -106,4 +108,19 @@ test('old fixed demo identity and fake workflow delays are removed', () => {
   assert.doesNotMatch(login, /studentId === '20240001'/)
   assert.doesNotMatch(upload, /MAT_20260521_008/)
   assert.doesNotMatch(verify, /verdict: 'tampered'/)
+})
+
+test('persistent header cannot shift or wrap between business pages', () => {
+  assert.match(globalStyles, /scrollbar-gutter:\s*stable/)
+  assert.match(header, /\.shell-title\s*\{[^}]*flex:\s*0 0 128px/s)
+  assert.match(header, /\.shell-chain-status\s*\{[^}]*white-space:\s*nowrap/s)
+  assert.match(header, /\.shell-user-card\s*\{[^}]*flex:\s*0 0 516px/s)
+})
+
+test('demo credentials are documented without being exposed on the login page', () => {
+  assert.doesNotMatch(login, /测试账号：/)
+  assert.doesNotMatch(login, /2023116101/)
+  assert.match(login, /演示账号信息请查看项目 README/)
+  assert.match(readme, /### 演示账号/)
+  assert.match(readme, /2023116101/)
 })

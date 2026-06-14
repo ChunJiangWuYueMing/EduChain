@@ -11,6 +11,10 @@ body,
   margin: 0;
 }
 
+html {
+  scrollbar-gutter: stable;
+}
+
 body {
   font-family:
     -apple-system,
