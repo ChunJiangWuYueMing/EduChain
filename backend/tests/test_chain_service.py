@@ -18,6 +18,7 @@ chain_service 端到端冒烟测试
 import sys
 import os
 import hashlib
+import time
 
 # 确保能 import backend 包
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
@@ -26,6 +27,8 @@ from services.chain_service import chain_service
 
 
 def test_all():
+    material_id = f"MAT_TEST_{time.time_ns()}"
+
     print("=" * 60)
     print("  EduChain chain_service 冒烟测试")
     print("=" * 60)
@@ -57,12 +60,14 @@ def test_all():
 
     # ---------- 资料注册测试 ----------
     print("\n[3] 测试资料注册上链...")
-    test_content = b"This is a test document content for EduChain."
+    test_content = (
+        f"This is a test document content for EduChain: {material_id}"
+    ).encode()
     sha256_hash = hashlib.sha256(test_content).digest()  # 32 bytes
     sim_hash = 0xABCDEF1234567890  # 模拟 SimHash
 
     chain_service.register_material(
-        material_id="MAT_TEST_001",
+        material_id=material_id,
         name="数据结构期末复习笔记",
         course="CS201",
         uploader=user_a,
@@ -82,7 +87,7 @@ def test_all():
 
     # ---------- 资料查询测试 ----------
     print("\n[4] 测试链上资料查询...")
-    material = chain_service.query_material("MAT_TEST_001")
+    material = chain_service.query_material(material_id)
     assert material is not None, "查询失败"
     assert material.name == "数据结构期末复习笔记"
     assert material.course == "CS201"
@@ -95,7 +100,7 @@ def test_all():
 
     # SHA-256 查重测试
     dup_id = chain_service.get_material_by_hash(sha256_hash)
-    assert dup_id == "MAT_TEST_001", f"查重失败: {dup_id}"
+    assert dup_id == material_id, f"查重失败: {dup_id}"
     print(f"    ✅ SHA-256 查重命中: {dup_id}")
 
     count = chain_service.get_material_count()
@@ -106,7 +111,7 @@ def test_all():
     balance_b_before = chain_service.get_edu_balance(user_b)
     balance_a_before = chain_service.get_edu_balance(user_a)
 
-    chain_service.download_material("MAT_TEST_001", user_b)
+    chain_service.download_material(material_id, user_b)
 
     balance_b_after = chain_service.get_edu_balance(user_b)
     balance_a_after2 = chain_service.get_edu_balance(user_a)
@@ -120,14 +125,14 @@ def test_all():
     # ---------- 下载日志测试 ----------
     print("\n[6] 测试下载日志记录...")
     chain_service.record_download(
-        material_id="MAT_TEST_001",
+        material_id=material_id,
         downloader=user_b,
         uploader=user_a,
         price=10,
         file_hash=sha256_hash,
     )
 
-    logs = chain_service.get_downloads_by_material("MAT_TEST_001")
+    logs = chain_service.get_downloads_by_material(material_id)
     assert len(logs) >= 1, f"日志为空"
     print(f"    ✅ 资料下载记录: {len(logs)} 条")
     print(f"       最近: downloader={logs[0].downloader[:10]}..., price={logs[0].price}")
@@ -142,20 +147,20 @@ def test_all():
     new_simhash = 0xABCDEF1234567899
 
     chain_service.update_material(
-        material_id="MAT_TEST_001",
+        material_id=material_id,
         new_sha256_hash=new_hash,
         new_sim_hash=new_simhash,
         new_text_length=len(new_content),
     )
 
-    updated = chain_service.query_material("MAT_TEST_001")
+    updated = chain_service.query_material(material_id)
     assert updated.version == 2
     print(f"    ✅ 版本更新: v{updated.version}")
 
     # ---------- 销毁测试 ----------
     print("\n[8] 测试通证销毁（模拟抄袭扣罚 50 EDU）...")
     bal_before = chain_service.get_edu_balance(user_a)
-    chain_service.burn_edu(user_a, 50, reason="plagiarism:MAT_TEST_001")
+    chain_service.burn_edu(user_a, 50, reason=f"plagiarism:{material_id}")
     bal_after = chain_service.get_edu_balance(user_a)
     print(f"    UserA: {bal_before} → {bal_after} EDU（-50 扣罚）")
     assert bal_after == bal_before - 50
@@ -163,8 +168,8 @@ def test_all():
 
     # ---------- 软删除测试 ----------
     print("\n[9] 测试软删除...")
-    chain_service.soft_delete_material("MAT_TEST_001", user_a)
-    deleted = chain_service.query_material("MAT_TEST_001")
+    chain_service.soft_delete_material(material_id, user_a)
+    deleted = chain_service.query_material(material_id)
     assert deleted.deleted is True
     print(f"    ✅ 软删除成功: deleted={deleted.deleted}")
 

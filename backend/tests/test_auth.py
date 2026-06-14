@@ -26,6 +26,9 @@ from app import create_app
 
 
 def test_all():
+    student_id = "2023112379"
+    password = "123456"
+
     print("=" * 60)
     print("  EduChain 认证模块测试")
     print("=" * 60)
@@ -45,7 +48,7 @@ def test_all():
     # ========== 2. 登录参数缺失 ==========
     print("\n[2] 登录参数缺失...")
     resp = client.post("/api/auth/login",
-                       json={"student_id": "2024001"})
+                       json={"student_id": student_id})
     data = resp.get_json()
     assert resp.status_code == 400
     print(f"    ✅ 返回 400: {data['msg']}")
@@ -53,18 +56,18 @@ def test_all():
     # ========== 3. 登录密码错误 ==========
     print("\n[3] 登录密码错误...")
     resp = client.post("/api/auth/login",
-                       json={"student_id": "2024001", "password": "wrong"})
+                       json={"student_id": student_id, "password": "wrong"})
     data = resp.get_json()
     assert resp.status_code == 401
     print(f"    ✅ 返回 401: {data['msg']}")
 
     # ========== 4. 登录成功 ==========
-    print("\n[4] 登录成功（默认密码 = 学号）...")
+    print("\n[4] 登录成功（统一测试密码）...")
     resp = client.post("/api/auth/login",
-                       json={"student_id": "2024001", "password": "2024001"})
+                       json={"student_id": student_id, "password": password})
     data = resp.get_json()
     assert resp.status_code == 200, f"应返回 200，实际 {resp.status_code}: {data}"
-    assert data["data"]["student_id"] == "2024001"
+    assert data["data"]["student_id"] == student_id
     assert data["data"]["eth_address"] != ""
     print(f"    ✅ 登录成功: {data['data']['name']}")
     print(f"       eth_address: {data['data']['eth_address'][:20]}...")
@@ -78,7 +81,7 @@ def test_all():
     resp = client.get("/api/auth/me")
     data = resp.get_json()
     assert resp.status_code == 200
-    assert data["data"]["student_id"] == "2024001"
+    assert data["data"]["student_id"] == student_id
     assert "edu_balance" in data["data"]
     print(f"    ✅ 返回用户信息: {data['data']['name']}, "
           f"余额={data['data']['edu_balance']} EDU")

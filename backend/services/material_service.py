@@ -15,10 +15,12 @@ material_service.py — 资料业务服务
   - chain_service:    纯链交互
 """
 
+import json
 import os
+import threading
 import time
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Optional
 
@@ -107,6 +109,16 @@ class DownloadResult:
 
 class MaterialService:
     """资料业务服务"""
+
+    _metadata_lock = threading.RLock()
+    _download_lock = threading.RLock()
+    _metadata_fields = {
+        "name",
+        "course",
+        "policy_type",
+        "policy_value",
+        "price",
+    }
 
     # =============================================
     #  上传
@@ -223,9 +235,10 @@ class MaterialService:
             ValueError: 资料不存在 / 已删除 / 无权限 / 余额不足 / 文件损坏
         """
         # --- 1. 查询资料 ---
-        material = chain_service.query_material(material_id)
-        if material is None:
+        chain_material = chain_service.query_material(material_id)
+        if chain_material is None:
             raise ValueError(f"资料不存在: {material_id}")
+        material = MaterialService._apply_metadata_override(chain_material)
 
         # --- 2. 校验未删除 ---
         if material.deleted:
@@ -257,24 +270,114 @@ class MaterialService:
         if verification.is_tampered:
             raise ValueError("服务端文件完整性校验失败，文件可能已损坏")
 
-        # --- 6. 通证支付（自己的资料跳过）---
-        if is_self:
-            receipt = {"transactionHash": bytes(32)}
-        else:
-            receipt = chain_service.download_material(material_id, downloader_address)
-
-        # --- 7. 记录下载日志 ---
         file_hash_bytes = bytes.fromhex(
             material.sha256_hash.replace("0x", "").ljust(64, "0")[:64]
         )
         log_price = 0 if is_self else material.price
-        chain_service.record_download(
-            material_id=material_id,
-            downloader=downloader_address,
-            uploader=material.uploader,
-            price=log_price,
-            file_hash=file_hash_bytes,
-        )
+
+        # --- 6-7. 支付与审计串行执行，并在审计失败时补偿退款 ---
+        with MaterialService._download_lock:
+            downloader_before = None
+            uploader_before = None
+            if not is_self and material.price > 0:
+                downloader_before = chain_service.get_edu_balance(
+                    downloader_address
+                )
+                uploader_before = chain_service.get_edu_balance(
+                    material.uploader
+                )
+            records_before = len(
+                chain_service.get_downloads_by_material(material_id)
+            )
+
+            paid = False
+            if is_self or material.price == 0:
+                receipt = {"transactionHash": bytes(32)}
+            else:
+                try:
+                    if material.price == chain_material.price:
+                        receipt = chain_service.download_material(
+                            material_id,
+                            downloader_address,
+                        )
+                    else:
+                        # 旧合约不支持修改价格；元数据价格变化后直接执行链上转账。
+                        receipt = chain_service.transfer_edu(
+                            downloader_address,
+                            material.uploader,
+                            material.price,
+                        )
+                    paid = True
+                except Exception:
+                    downloader_after = chain_service.get_edu_balance(
+                        downloader_address
+                    )
+                    uploader_after = chain_service.get_edu_balance(
+                        material.uploader
+                    )
+                    paid = (
+                        downloader_after == downloader_before - material.price
+                        and uploader_after == uploader_before + material.price
+                    )
+                    if not paid:
+                        raise
+                    receipt = {"transactionHash": bytes(32)}
+
+            try:
+                chain_service.record_download(
+                    material_id=material_id,
+                    downloader=downloader_address,
+                    uploader=material.uploader,
+                    price=log_price,
+                    file_hash=file_hash_bytes,
+                )
+            except Exception as log_error:
+                records_after = []
+                for _ in range(3):
+                    try:
+                        records_after = chain_service.get_downloads_by_material(
+                            material_id
+                        )
+                        break
+                    except Exception:
+                        time.sleep(0.5)
+                recorded = (
+                    len(records_after) > records_before
+                    and any(
+                        record.downloader.lower() == downloader_address.lower()
+                        and record.uploader.lower() == material.uploader.lower()
+                        and record.price == log_price
+                        and MaterialService._normalize_hash(record.file_hash)
+                        == MaterialService._normalize_hash(material.sha256_hash)
+                        for record in records_after[records_before:]
+                    )
+                )
+                if not recorded:
+                    if paid:
+                        try:
+                            chain_service.transfer_edu(
+                                material.uploader,
+                                downloader_address,
+                                material.price,
+                            )
+                            downloader_refunded = chain_service.get_edu_balance(
+                                downloader_address
+                            )
+                            uploader_refunded = chain_service.get_edu_balance(
+                                material.uploader
+                            )
+                            if (
+                                downloader_refunded != downloader_before
+                                or uploader_refunded != uploader_before
+                            ):
+                                raise RuntimeError("退款后余额校验失败")
+                        except Exception as refund_error:
+                            raise RuntimeError(
+                                "下载审计写入失败，且自动退款失败，请管理员核对链上交易"
+                            ) from refund_error
+                    raise RuntimeError(
+                        "下载审计写入失败，支付已自动退回"
+                    ) from log_error
 
         # --- 8. 返回文件信息 ---
         stored_ext = Path(file_path).suffix
@@ -289,7 +392,7 @@ class MaterialService:
             price=log_price,
             uploader=material.uploader,
             downloader=downloader_address,
-            tx_hash=receipt["transactionHash"].hex(),
+            tx_hash=MaterialService._transaction_hash(receipt),
         )
 
     # =============================================
@@ -337,7 +440,7 @@ class MaterialService:
         material = chain_service.query_material(material_id)
         if material is None:
             return None
-        return material.to_dict()
+        return MaterialService._apply_metadata_override(material).to_dict()
 
     @staticmethod
     def list_materials(
@@ -368,7 +471,9 @@ class MaterialService:
                 material = chain_service.query_material(mat_id)
                 if material is None or material.deleted:
                     continue
-                all_materials.append(material)
+                all_materials.append(
+                    MaterialService._apply_metadata_override(material)
+                )
             except Exception:
                 continue
 
@@ -405,9 +510,98 @@ class MaterialService:
             "tx_hash": receipt["transactionHash"].hex(),
         }
 
+    @classmethod
+    def update_metadata(
+        cls,
+        material_id: str,
+        *,
+        name: str,
+        course: str,
+        policy_type: int,
+        policy_value: str,
+        price: int,
+    ) -> dict:
+        """持久化合约当前版本未覆盖的可编辑元数据。"""
+        override = {
+            "name": name,
+            "course": course,
+            "policy_type": policy_type,
+            "policy_value": policy_value,
+            "price": price,
+        }
+        with cls._metadata_lock:
+            materials = cls._read_metadata_overrides()
+            materials[material_id] = override
+            cls._write_metadata_overrides(materials)
+        return override
+
+    @staticmethod
+    def replace_material_file(material_id: str, temp_path: str) -> str:
+        """在链上指纹更新成功后原子替换资料文件。"""
+        old_path = MaterialService._find_material_file(material_id)
+        suffix = Path(temp_path).suffix
+        target_path = os.path.join(
+            config.UPLOAD_FOLDER,
+            f"{material_id}{suffix}",
+        )
+        os.replace(temp_path, target_path)
+        if old_path and os.path.abspath(old_path) != os.path.abspath(target_path):
+            os.remove(old_path)
+        return target_path
+
     # =============================================
     #  内部方法
     # =============================================
+
+    @classmethod
+    def _read_metadata_overrides(cls) -> dict[str, dict]:
+        path = Path(config.MATERIAL_METADATA_FILE)
+        if not path.exists():
+            return {}
+        with path.open(encoding="utf-8") as file:
+            data = json.load(file)
+        return data.get("materials", {})
+
+    @classmethod
+    def _write_metadata_overrides(cls, materials: dict[str, dict]) -> None:
+        path = Path(config.MATERIAL_METADATA_FILE)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        temporary = path.with_suffix(f"{path.suffix}.tmp")
+        temporary.write_text(
+            json.dumps(
+                {"materials": materials},
+                ensure_ascii=False,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        os.replace(temporary, path)
+
+    @classmethod
+    def _apply_metadata_override(cls, material: MaterialData) -> MaterialData:
+        material_id = getattr(material, "id", "")
+        if not material_id:
+            return material
+        with cls._metadata_lock:
+            override = cls._read_metadata_overrides().get(material_id, {})
+        values = {
+            key: value
+            for key, value in override.items()
+            if key in cls._metadata_fields
+        }
+        return replace(material, **values) if values else material
+
+    @staticmethod
+    def _transaction_hash(receipt: dict) -> str:
+        tx_hash = receipt.get("transactionHash", "")
+        if hasattr(tx_hash, "hex"):
+            return tx_hash.hex()
+        return str(tx_hash)
+
+    @staticmethod
+    def _normalize_hash(value: str) -> str:
+        return str(value).lower().removeprefix("0x")
 
     @staticmethod
     def _check_access_policy(

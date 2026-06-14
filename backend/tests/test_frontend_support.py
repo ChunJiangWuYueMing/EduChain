@@ -93,9 +93,10 @@ class FrontendSupportTests(unittest.TestCase):
 
         class TransferEvent:
             @staticmethod
-            def create_filter(from_block, argument_filters):
-                entries = [receive_event] if "to" in argument_filters else [send_event]
-                return SimpleNamespace(get_all_entries=lambda: entries)
+            def get_logs(fromBlock, toBlock):
+                assert fromBlock == 0
+                assert toBlock == "latest"
+                return [receive_event, send_event]
 
         get_block = mock.Mock(return_value={"timestamp": 1_700_000_000})
         fake_chain = SimpleNamespace(
@@ -112,6 +113,32 @@ class FrontendSupportTests(unittest.TestCase):
         self.assertEqual(len(history), 2)
         self.assertTrue(all(item["timestamp"] == 1_700_000_000 for item in history))
         get_block.assert_called_once_with(7)
+
+    def test_deletion_event_matches_indexed_string_hash_without_hex_prefix(self):
+        chain_module = importlib.import_module("services.chain_service")
+        material_id = "MAT_DELETE_001"
+        event = SimpleNamespace(
+            args=SimpleNamespace(
+                id=bytes(chain_module.Web3.keccak(text=material_id)),
+                caller="0x0000000000000000000000000000000000000001",
+                timestamp=1_700_000_000,
+            )
+        )
+
+        class DeletedEvent:
+            @staticmethod
+            def get_logs(fromBlock, toBlock):
+                return [event]
+
+        service = chain_module.ChainService()
+        service._initialized = True
+        service._registry = SimpleNamespace(
+            events=SimpleNamespace(MaterialDeleted=DeletedEvent())
+        )
+        records = service.get_deletions_by_material(material_id)
+
+        self.assertEqual(len(records), 1)
+        self.assertEqual(records[0].material_id, material_id)
 
 
 if __name__ == "__main__":

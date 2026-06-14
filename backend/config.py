@@ -31,6 +31,10 @@ class Config:
 
     # --- 持久化运行时数据 ---
     USERS_FILE: str = os.getenv("USERS_FILE", str(BASE_DIR / "runtime" / "users.json"))
+    MATERIAL_METADATA_FILE: str = os.getenv(
+        "MATERIAL_METADATA_FILE",
+        str(BASE_DIR / "runtime" / "material_metadata.json"),
+    )
     USERS_SEED_FILE: str = os.getenv("USERS_SEED_FILE", str(BASE_DIR / "users.seed.json"))
     CONTRACTS_ENV_FILE: str = os.getenv(
         "CONTRACTS_ENV_FILE",
@@ -45,6 +49,10 @@ class Config:
     # --- Ganache / Web3 ---
     GANACHE_URL: str = os.getenv("GANACHE_URL", "http://127.0.0.1:8545")
     CHAIN_ID: int = int(os.getenv("CHAIN_ID", "1337"))
+    WEB3_HTTP_TIMEOUT: int = int(os.getenv("WEB3_HTTP_TIMEOUT", "120"))
+    TRANSACTION_RECEIPT_TIMEOUT: int = int(
+        os.getenv("TRANSACTION_RECEIPT_TIMEOUT", "120")
+    )
 
     # 部署合约的账户索引（Ganache 默认 10 个账户，用第 0 个做 owner）
     DEPLOYER_ACCOUNT_INDEX: int = 0

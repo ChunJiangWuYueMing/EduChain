@@ -250,9 +250,13 @@ def update_material(material_id):
     if material["uploader"].lower() != user["eth_address"].lower():
         return forbidden("只能修改自己上传的资料")
 
-    body = request.get_json(silent=True) or {}
-    name = body.get("name", "").strip() or material["name"]
-    course = body.get("course", "").strip() or material["course"]
+    body = (
+        request.get_json(silent=True) or {}
+        if request.is_json
+        else request.form
+    )
+    name = str(body.get("name", "")).strip() or material["name"]
+    course = str(body.get("course", "")).strip() or material["course"]
     if course not in COURSE_CATALOG:
         return bad_request("课程编号无效")
     try:
@@ -260,13 +264,16 @@ def update_material(material_id):
         price = int(body.get("price", material["price"]))
     except (TypeError, ValueError):
         return bad_request("访问策略和价格必须是整数")
-    policy_value = body.get("policy_value", "").strip()
+    policy_value = str(
+        body.get("policy_value", material["policy_value"])
+    ).strip()
 
     if policy_type not in (0, 1, 2):
         return bad_request("访问策略类型无效")
     if price < 0:
         return bad_request("价格不能为负数")
 
+    temp_path = None
     try:
         if "file" in request.files and request.files["file"].filename:
             file = request.files["file"]
@@ -283,20 +290,28 @@ def update_material(material_id):
             chain_service.update_material(
                 material_id, fp.sha256_hash, fp.sim_hash, fp.text_length
             )
-            os.remove(temp_path)
+            material_service.replace_material_file(material_id, temp_path)
+            temp_path = None
+
+        updated = material_service.update_metadata(
+            material_id,
+            name=name,
+            course=course,
+            policy_type=policy_type,
+            policy_value=policy_value,
+            price=price,
+        )
 
         return success(
             {
                 "material_id": material_id,
-                "name": name,
-                "course": course,
-                "policy_type": policy_type,
-                "policy_value": policy_value,
-                "price": price,
+                **updated,
             },
             "更新成功",
         )
     except Exception as exc:
+        if temp_path and os.path.exists(temp_path):
+            os.remove(temp_path)
         current_app.logger.error("更新失败: %s", exc)
         return server_error(f"更新失败: {exc}")
 
@@ -319,7 +334,10 @@ def delete_material(material_id):
         return forbidden("只能删除自己上传的资料")
 
     try:
-        result = material_service.soft_delete(material_id, user["eth_address"])
+        contract_caller = (
+            material["uploader"] if is_admin else user["eth_address"]
+        )
+        result = material_service.soft_delete(material_id, contract_caller)
     except Exception as exc:
         current_app.logger.error("删除失败: %s", exc)
         return server_error(f"删除失败: {exc}")

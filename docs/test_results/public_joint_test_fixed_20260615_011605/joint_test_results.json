@@ -1,0 +1,1198 @@
+{
+  "run": {
+    "base_url": "http://1.95.47.47",
+    "started_at": "2026-06-15T01:16:05+08:00",
+    "output_dir": "docs\\test_results\\public_joint_test_fixed_20260615_011605",
+    "finished_at": "2026-06-15T01:16:52+08:00"
+  },
+  "file_hashes": {
+    "A": {
+      "name": "A_区块链技术及应用课程复习资料.pdf",
+      "bytes": 153438,
+      "sha256": "24fcfe9f5cae438b450d7c185bd5450b1eb9d1df48b6352e5add7258913b706b"
+    },
+    "B": {
+      "name": "B_区块链资料完全重复副本.pdf",
+      "bytes": 153438,
+      "sha256": "24fcfe9f5cae438b450d7c185bd5450b1eb9d1df48b6352e5add7258913b706b"
+    },
+    "C": {
+      "name": "C_区块链课程复习资料修订版.pdf",
+      "bytes": 164339,
+      "sha256": "e90c6c9f5080d0d900625566714a7a1ed5b6b7c90236503ae5e7104de64d46e0"
+    },
+    "D": {
+      "name": "D_Solidity智能合约基础.pptx",
+      "bytes": 42431,
+      "sha256": "41af8f52bdd7835b5dbf833525cf762e7db7ba14ded7c94226432440b3d6d8c6"
+    },
+    "E": {
+      "name": "E_操作系统进程调度复习资料.pdf",
+      "bytes": 126801,
+      "sha256": "783ab7d39f64b5b4dddcc252d8c60d1c6584f4321f23b4df31530b195ae835f4"
+    },
+    "F": {
+      "name": "F_计算机网络协议总结.pptx",
+      "bytes": 42323,
+      "sha256": "6121a9e13f3342cbcaec24d2a8a157e3b64c93dcdc01a7a04bce5e50babab851"
+    },
+    "G": {
+      "name": "G_数据库原理实验参考资料.pdf",
+      "bytes": 126327,
+      "sha256": "4ca94c10df9c13bcdf334906ae32898bddc19301e5fc7395d1facb1189376e82"
+    },
+    "H": {
+      "name": "H_人工智能导论知识总结.pptx",
+      "bytes": 42524,
+      "sha256": "227fa6882c9193e191ea69a9730c267489401cf227defcb878154958c4ed9500"
+    },
+    "I": {
+      "name": "I_区块链资料篡改测试版.pdf",
+      "bytes": 89800,
+      "sha256": "1066a75b20758c1a84f4f671608be04c9c55e1f140a1738a5c58f1d08ec97525"
+    }
+  },
+  "health_before": {
+    "admin_count": 1,
+    "block_number": 4,
+    "chain_connected": true,
+    "chain_id": 1337,
+    "contracts": {
+      "download_log": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
+      "edu_token": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+      "material_registry": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512"
+    },
+    "contracts_ready": true,
+    "deployer": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+    "download_count": 0,
+    "ganache_connected": true,
+    "ganache_url": "http://ganache:8545",
+    "material_count": 0,
+    "network": "ganache",
+    "status": "running",
+    "student_count": 8,
+    "users_count": 9,
+    "wallets_ready": 9
+  },
+  "health_after": {
+    "admin_count": 1,
+    "block_number": 41,
+    "chain_connected": true,
+    "chain_id": 1337,
+    "contracts": {
+      "download_log": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
+      "edu_token": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+      "material_registry": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512"
+    },
+    "contracts_ready": true,
+    "deployer": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+    "download_count": 6,
+    "ganache_connected": true,
+    "ganache_url": "http://ganache:8545",
+    "material_count": 7,
+    "network": "ganache",
+    "status": "running",
+    "student_count": 8,
+    "users_count": 9,
+    "wallets_ready": 9
+  },
+  "accounts": {
+    "2023112379": {
+      "name": "唐昊",
+      "role": "student",
+      "courses": [
+        "BC401",
+        "AI301"
+      ],
+      "eth_address": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+      "first_login_reward": 100,
+      "login_balance": 100,
+      "login_elapsed_seconds": 0.708
+    },
+    "2023112385": {
+      "name": "薛雨凇",
+      "role": "student",
+      "courses": [
+        "BC401",
+        "CS201"
+      ],
+      "eth_address": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+      "first_login_reward": 100,
+      "login_balance": 100,
+      "login_elapsed_seconds": 0.786
+    },
+    "admin_2023112379": {
+      "name": "唐昊（管理员）",
+      "role": "admin",
+      "courses": [],
+      "eth_address": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+      "first_login_reward": 0,
+      "login_balance": 0,
+      "login_elapsed_seconds": 0.791
+    },
+    "2023112380": {
+      "name": "于骐畅",
+      "role": "student",
+      "courses": [
+        "BC401",
+        "CS302"
+      ],
+      "eth_address": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65",
+      "first_login_reward": 100,
+      "login_balance": 100,
+      "login_elapsed_seconds": 1.141
+    },
+    "2023112318": {
+      "name": "周子皓",
+      "role": "student",
+      "courses": [
+        "BC401",
+        "CS301"
+      ],
+      "eth_address": "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc",
+      "first_login_reward": 100,
+      "login_balance": 100,
+      "login_elapsed_seconds": 1.182
+    },
+    "2023112330": {
+      "name": "王东涵",
+      "role": "student",
+      "courses": [
+        "CS302",
+        "DB201"
+      ],
+      "eth_address": "0x976EA74026E726554dB657fA54763abd0C3a0aa9",
+      "first_login_reward": 100,
+      "login_balance": 100,
+      "login_elapsed_seconds": 1.374
+    },
+    "2023112392": {
+      "name": "李子彤",
+      "role": "student",
+      "courses": [
+        "BC401",
+        "AI301"
+      ],
+      "eth_address": "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f",
+      "first_login_reward": 100,
+      "login_balance": 100,
+      "login_elapsed_seconds": 1.395
+    },
+    "2023112317": {
+      "name": "方天宇",
+      "role": "student",
+      "courses": [
+        "BC401",
+        "CS201",
+        "CS301"
+      ],
+      "eth_address": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+      "first_login_reward": 100,
+      "login_balance": 100,
+      "login_elapsed_seconds": 1.431
+    },
+    "2023116100": {
+      "name": "谢傲宇",
+      "role": "student",
+      "courses": [
+        "BC401",
+        "DB201"
+      ],
+      "eth_address": "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955",
+      "first_login_reward": 100,
+      "login_balance": 100,
+      "login_elapsed_seconds": 1.503
+    }
+  },
+  "materials": {
+    "A": {
+      "material_id": "MAT_1781457372_9c3fc361",
+      "name": "A_区块链技术及应用课程复习资料.pdf",
+      "price": 5,
+      "sha256_hash": "24fcfe9f5cae438b450d7c185bd5450b1eb9d1df48b6352e5add7258913b706b",
+      "sim_hash": "0x8f30a25ce109e166d3cccd47ca2b704adf13f581e528581bda6bcc9aab8f09ca",
+      "similar_materials": [],
+      "text_length": 1634,
+      "tx_hash": "0xbbc791a656808055c76443b6f6458c8526e1e1812dbd98d323b5e2d36849089b",
+      "upload_reward": 20
+    },
+    "B": {
+      "status": 400,
+      "message": "文件已存在，与资料 MAT_1781457372_9c3fc361 完全相同（SHA-256 匹配）"
+    },
+    "D": {
+      "material_id": "MAT_1781457380_077a0491",
+      "name": "D_Solidity智能合约基础.pptx",
+      "price": 5,
+      "sha256_hash": "41af8f52bdd7835b5dbf833525cf762e7db7ba14ded7c94226432440b3d6d8c6",
+      "sim_hash": "0x4ea9b52421afe976538deee4eb4b784ac679a1013d2cd86fe324e58bb28eebdc",
+      "similar_materials": [],
+      "text_length": 1336,
+      "tx_hash": "0x64dffda6b9a2e32880330dc248274c045cf5adaccce5b60477b2a589f5210fe6",
+      "upload_reward": 20
+    },
+    "H": {
+      "material_id": "MAT_1781457380_e9e778f9",
+      "name": "H_人工智能导论知识总结.pptx",
+      "price": 5,
+      "sha256_hash": "227fa6882c9193e191ea69a9730c267489401cf227defcb878154958c4ed9500",
+      "sim_hash": "0x4611501d588365f4481894ecca21e8ae9724bfc6818ebc4e8b64f443d4ae931c",
+      "similar_materials": [],
+      "text_length": 1280,
+      "tx_hash": "0x1f6fdc656dabb392fa59ab1a0bcff78175df7a070b68cb1a7f23cf1f201d967b",
+      "upload_reward": 20
+    },
+    "E": {
+      "material_id": "MAT_1781457381_e6727a29",
+      "name": "E_操作系统进程调度复习资料.pdf",
+      "price": 5,
+      "sha256_hash": "783ab7d39f64b5b4dddcc252d8c60d1c6584f4321f23b4df31530b195ae835f4",
+      "sim_hash": "0xb0e98ab5e79b459e20b7aa698a06fdfcf0b1e6d7026ad7da10d9e628cb32d9ee",
+      "similar_materials": [],
+      "text_length": 1064,
+      "tx_hash": "0x09a3fda86fd7615867efdecd85c780295eb204b2219979836cb219d291f693bb",
+      "upload_reward": 20
+    },
+    "F": {
+      "material_id": "MAT_1781457381_ddd577b1",
+      "name": "F_计算机网络协议总结.pptx",
+      "price": 5,
+      "sha256_hash": "6121a9e13f3342cbcaec24d2a8a157e3b64c93dcdc01a7a04bce5e50babab851",
+      "sim_hash": "0xa81471326a47ae73308c08f98c04de9779c137d725c9f652d915c0ee2a8e415e",
+      "similar_materials": [],
+      "text_length": 1289,
+      "tx_hash": "0x94834c0de4c0e4ed2f4fdeafa3f4ac02050b50c3522cdec348ab0790cba71e8b",
+      "upload_reward": 20
+    },
+    "G": {
+      "material_id": "MAT_1781457381_09c7867b",
+      "name": "G_数据库原理实验参考资料.pdf",
+      "price": 5,
+      "sha256_hash": "4ca94c10df9c13bcdf334906ae32898bddc19301e5fc7395d1facb1189376e82",
+      "sim_hash": "0x232261a94409e4ea800560f10b1930ee5f11f542bfae74e9dea8c529aac663de",
+      "similar_materials": [],
+      "text_length": 1002,
+      "tx_hash": "0x26e955837469d37182b4e5c7120b896160bd78625f1b6b6744b8365e703930d8",
+      "upload_reward": 20
+    },
+    "C": {
+      "material_id": "MAT_1781457381_8f7a8549",
+      "name": "C_区块链课程复习资料修订版.pdf",
+      "price": 5,
+      "sha256_hash": "e90c6c9f5080d0d900625566714a7a1ed5b6b7c90236503ae5e7104de64d46e0",
+      "sim_hash": "0xaf20c21ce309e366d7cdc845ca2b704adf13e5818f289c1b5a4bcc9aa88f09c8",
+      "similar_materials": [
+        {
+          "classification": "derived",
+          "hamming_distance": 25,
+          "material_id": "MAT_1781457372_9c3fc361",
+          "material_name": "A_区块链技术及应用课程复习资料.pdf",
+          "similarity_percent": 90.23
+        }
+      ],
+      "text_length": 1855,
+      "tx_hash": "0x16874cf66380abcefe12ca046cc9fa1435f022098a51a7caf91a2a7b62ca48cd",
+      "upload_reward": 20
+    }
+  },
+  "balances": {
+    "after_login": {
+      "2023112379": 100,
+      "admin_2023112379": 0,
+      "2023112385": 100,
+      "2023112380": 100,
+      "2023112318": 100,
+      "2023112330": 100,
+      "2023116100": 100,
+      "2023112392": 100,
+      "2023112317": 100
+    },
+    "after_upload": {
+      "2023112379": 120,
+      "admin_2023112379": 0,
+      "2023112385": 120,
+      "2023112380": 120,
+      "2023112318": 120,
+      "2023112330": 120,
+      "2023116100": 120,
+      "2023112392": 120,
+      "2023112317": 100
+    },
+    "after_downloads": {
+      "2023112379": 135,
+      "admin_2023112379": 0,
+      "2023112385": 115,
+      "2023112380": 115,
+      "2023112318": 125,
+      "2023112330": 125,
+      "2023116100": 125,
+      "2023112392": 115,
+      "2023112317": 85
+    },
+    "final": {
+      "2023112379": 138,
+      "admin_2023112379": 0,
+      "2023112385": 115,
+      "2023112380": 95,
+      "2023112318": 125,
+      "2023112330": 135,
+      "2023116100": 125,
+      "2023112392": 115,
+      "2023112317": 82
+    }
+  },
+  "downloads": {
+    "DL-E-WANG-DENY": {
+      "student_id": "2023112330",
+      "material": "E",
+      "status": 400,
+      "message": "权限不足: 该资料仅限选修 CS301 的学生下载",
+      "balance_before": 120,
+      "balance_after": 125,
+      "saved_file": "",
+      "elapsed_seconds": 0.643
+    },
+    "DL-F-TANG-DENY": {
+      "student_id": "2023112379",
+      "material": "F",
+      "status": 400,
+      "message": "权限不足: 该资料仅限选修 CS302 的学生下载",
+      "balance_before": 120,
+      "balance_after": 125,
+      "saved_file": "",
+      "elapsed_seconds": 0.624
+    },
+    "DL-G-LI-DENY": {
+      "student_id": "2023112392",
+      "material": "G",
+      "status": 400,
+      "message": "权限不足: 该资料仅限指定用户下载",
+      "balance_before": 120,
+      "balance_after": 115,
+      "saved_file": "",
+      "elapsed_seconds": 0.719
+    },
+    "DL-A-LI": {
+      "student_id": "2023112392",
+      "material": "A",
+      "status": 200,
+      "message": "HTTP 200",
+      "balance_before": 120,
+      "balance_after": 115,
+      "saved_file": "docs\\test_results\\public_joint_test_fixed_20260615_011605\\downloads\\DL-A-LI_2023112392_A.pdf",
+      "elapsed_seconds": 1.517
+    },
+    "DL-F-YU": {
+      "student_id": "2023112380",
+      "material": "F",
+      "status": 200,
+      "message": "HTTP 200",
+      "balance_before": 120,
+      "balance_after": 115,
+      "saved_file": "docs\\test_results\\public_joint_test_fixed_20260615_011605\\downloads\\DL-F-YU_2023112380_F.pptx",
+      "elapsed_seconds": 1.415
+    },
+    "DL-E-FANG": {
+      "student_id": "2023112317",
+      "material": "E",
+      "status": 200,
+      "message": "HTTP 200",
+      "balance_before": 100,
+      "balance_after": 85,
+      "saved_file": "docs\\test_results\\public_joint_test_fixed_20260615_011605\\downloads\\DL-E-FANG_2023112317_E.pdf",
+      "elapsed_seconds": 1.691
+    },
+    "DL-A-FANG": {
+      "student_id": "2023112317",
+      "material": "A",
+      "status": 200,
+      "message": "HTTP 200",
+      "balance_before": 100,
+      "balance_after": 85,
+      "saved_file": "docs\\test_results\\public_joint_test_fixed_20260615_011605\\downloads\\DL-A-FANG_2023112317_A.pdf",
+      "elapsed_seconds": 2.008
+    },
+    "DL-A-XUE": {
+      "student_id": "2023112385",
+      "material": "A",
+      "status": 200,
+      "message": "HTTP 200",
+      "balance_before": 120,
+      "balance_after": 115,
+      "saved_file": "docs\\test_results\\public_joint_test_fixed_20260615_011605\\downloads\\DL-A-XUE_2023112385_A.pdf",
+      "elapsed_seconds": 1.956
+    },
+    "DL-G-FANG": {
+      "student_id": "2023112317",
+      "material": "G",
+      "status": 200,
+      "message": "HTTP 200",
+      "balance_before": 100,
+      "balance_after": 85,
+      "saved_file": "docs\\test_results\\public_joint_test_fixed_20260615_011605\\downloads\\DL-G-FANG_2023112317_G.pdf",
+      "elapsed_seconds": 2.032
+    }
+  },
+  "verification": {
+    "original_A": {
+      "added_keywords": [],
+      "classification": "identical",
+      "common_keywords": [
+        "256",
+        "EduChain",
+        "SHA",
+        "SimHash",
+        "上传",
+        "下载",
+        "交易",
+        "区块",
+        "合约",
+        "哈希",
+        "完整性",
+        "扣罚",
+        "文件",
+        "智能",
+        "测试",
+        "节点",
+        "课程",
+        "资料",
+        "通证",
+        "验证"
+      ],
+      "hamming_distance": 0,
+      "is_tampered": false,
+      "removed_keywords": [],
+      "sha256_chain": "24fcfe9f5cae438b450d7c185bd5450b1eb9d1df48b6352e5add7258913b706b",
+      "sha256_local": "24fcfe9f5cae438b450d7c185bd5450b1eb9d1df48b6352e5add7258913b706b",
+      "sha256_match": true,
+      "sim_hash_chain": "0x8f30a25ce109e166d3cccd47ca2b704adf13f581e528581bda6bcc9aab8f09ca",
+      "sim_hash_local": "0x8f30a25ce109e166d3cccd47ca2b704adf13f581e528581bda6bcc9aab8f09ca",
+      "similarity_percent": 100.0,
+      "text_length_chain": 0,
+      "text_length_local": 1634
+    },
+    "tampered_I_against_A": {
+      "added_keywords": [
+        "BC401",
+        "上架",
+        "修改",
+        "内容",
+        "用于",
+        "篡改",
+        "系统",
+        "说明"
+      ],
+      "classification": "different",
+      "common_keywords": [
+        "256",
+        "EduChain",
+        "SHA",
+        "上传",
+        "区块",
+        "哈希",
+        "完整性",
+        "文件",
+        "测试",
+        "课程",
+        "资料",
+        "验证"
+      ],
+      "hamming_distance": 68,
+      "is_tampered": true,
+      "removed_keywords": [
+        "SimHash",
+        "下载",
+        "交易",
+        "合约",
+        "扣罚",
+        "智能",
+        "节点",
+        "通证"
+      ],
+      "sha256_chain": "24fcfe9f5cae438b450d7c185bd5450b1eb9d1df48b6352e5add7258913b706b",
+      "sha256_local": "1066a75b20758c1a84f4f671608be04c9c55e1f140a1738a5c58f1d08ec97525",
+      "sha256_match": false,
+      "sim_hash_chain": "0x8f30a25ce109e166d3cccd47ca2b704adf13f581e528581bda6bcc9aab8f09ca",
+      "sim_hash_local": "0xb81ee34e01bad66c2594609ea2772aacd91fd02a5aa901cdb0bc8daa1ce8bda",
+      "similarity_percent": 73.44,
+      "text_length_chain": 0,
+      "text_length_local": 654
+    }
+  },
+  "audit": {
+    "global": {
+      "count": 6,
+      "records": [
+        {
+          "downloader": "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f",
+          "file_hash": "24fcfe9f5cae438b450d7c185bd5450b1eb9d1df48b6352e5add7258913b706b",
+          "material_id": "MAT_1781457372_9c3fc361",
+          "price": 5,
+          "timestamp": 1781457391,
+          "uploader": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
+        },
+        {
+          "downloader": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+          "file_hash": "783ab7d39f64b5b4dddcc252d8c60d1c6584f4321f23b4df31530b195ae835f4",
+          "material_id": "MAT_1781457381_e6727a29",
+          "price": 5,
+          "timestamp": 1781457391,
+          "uploader": "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc"
+        },
+        {
+          "downloader": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65",
+          "file_hash": "6121a9e13f3342cbcaec24d2a8a157e3b64c93dcdc01a7a04bce5e50babab851",
+          "material_id": "MAT_1781457381_ddd577b1",
+          "price": 5,
+          "timestamp": 1781457391,
+          "uploader": "0x976EA74026E726554dB657fA54763abd0C3a0aa9"
+        },
+        {
+          "downloader": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+          "file_hash": "24fcfe9f5cae438b450d7c185bd5450b1eb9d1df48b6352e5add7258913b706b",
+          "material_id": "MAT_1781457372_9c3fc361",
+          "price": 5,
+          "timestamp": 1781457391,
+          "uploader": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
+        },
+        {
+          "downloader": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+          "file_hash": "24fcfe9f5cae438b450d7c185bd5450b1eb9d1df48b6352e5add7258913b706b",
+          "material_id": "MAT_1781457372_9c3fc361",
+          "price": 5,
+          "timestamp": 1781457391,
+          "uploader": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
+        },
+        {
+          "downloader": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+          "file_hash": "4ca94c10df9c13bcdf334906ae32898bddc19301e5fc7395d1facb1189376e82",
+          "material_id": "MAT_1781457381_09c7867b",
+          "price": 5,
+          "timestamp": 1781457391,
+          "uploader": "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955"
+        }
+      ]
+    },
+    "count": {
+      "download_count": 6
+    },
+    "material_A": {
+      "deletions": [],
+      "downloads": [
+        {
+          "downloader": "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f",
+          "file_hash": "24fcfe9f5cae438b450d7c185bd5450b1eb9d1df48b6352e5add7258913b706b",
+          "material_id": "MAT_1781457372_9c3fc361",
+          "price": 5,
+          "timestamp": 1781457391,
+          "uploader": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
+        },
+        {
+          "downloader": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+          "file_hash": "24fcfe9f5cae438b450d7c185bd5450b1eb9d1df48b6352e5add7258913b706b",
+          "material_id": "MAT_1781457372_9c3fc361",
+          "price": 5,
+          "timestamp": 1781457391,
+          "uploader": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
+        },
+        {
+          "downloader": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+          "file_hash": "24fcfe9f5cae438b450d7c185bd5450b1eb9d1df48b6352e5add7258913b706b",
+          "material_id": "MAT_1781457372_9c3fc361",
+          "price": 5,
+          "timestamp": 1781457391,
+          "uploader": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
+        }
+      ],
+      "material": {
+        "course": "BC401",
+        "course_name": "区块链技术及应用",
+        "deleted": false,
+        "id": "MAT_1781457372_9c3fc361",
+        "name": "A_区块链技术及应用课程复习资料.pdf",
+        "policy_type": 0,
+        "policy_value": "",
+        "price": 5,
+        "sha256_hash": "24fcfe9f5cae438b450d7c185bd5450b1eb9d1df48b6352e5add7258913b706b",
+        "sim_hash": 64766666593439059651594774798563346857153964413565177801685401435460265249226,
+        "text_length": 1634,
+        "timestamp": 1781457372,
+        "uploader": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+        "version": 1
+      },
+      "updates": []
+    }
+  },
+  "cases": [
+    {
+      "id": "FILE-01",
+      "operator": "测试工具",
+      "function": "测试文件完整性基线",
+      "expected": "A 与 B SHA-256 完全一致，其他文件具有独立哈希",
+      "actual": "文件哈希已计算",
+      "passed": true,
+      "balance_change": "",
+      "reference": "24fcfe9f5cae438b450d7c185bd5450b1eb9d1df48b6352e5add7258913b706b",
+      "elapsed_seconds": null,
+      "notes": ""
+    },
+    {
+      "id": "ENV-HEALTH",
+      "operator": "管理员",
+      "function": "公网健康检查",
+      "expected": "链、合约、9 个账号和 9 个钱包就绪",
+      "actual": "{\"admin_count\": 1, \"block_number\": 4, \"chain_connected\": true, \"chain_id\": 1337, \"contracts\": {\"download_log\": \"0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0\", \"edu_token\": \"0x5FbDB2315678afecb367f032d93F642f64180aa3\", \"material_registry\": \"0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512\"}, \"contracts_ready\": true, \"deployer\": \"0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266\", \"download_count\": 0, \"ganache_connected\": true, \"ganache_url\": \"http://ganache:8545\", \"material_count\": 0, \"network\": \"ganache\", \"status\": \"running\", \"student_count\": 8, \"users_count\": 9, \"wallets_ready\": 9}",
+      "passed": true,
+      "balance_change": "",
+      "reference": "",
+      "elapsed_seconds": null,
+      "notes": "初始环境干净=True"
+    },
+    {
+      "id": "AUTH-REGISTER",
+      "operator": "未登录用户",
+      "function": "服务器关闭公开注册",
+      "expected": "HTTP 403，提示账号由管理员统一创建",
+      "actual": "HTTP 403: 当前为课程测试环境，账号已由管理员统一创建。",
+      "passed": true,
+      "balance_change": "",
+      "reference": "",
+      "elapsed_seconds": 0.642,
+      "notes": ""
+    },
+    {
+      "id": "AUTH-BAD-PASSWORD",
+      "operator": "唐昊",
+      "function": "错误密码登录",
+      "expected": "HTTP 401",
+      "actual": "HTTP 401: 学号或密码错误",
+      "passed": true,
+      "balance_change": "",
+      "reference": "",
+      "elapsed_seconds": 0.647,
+      "notes": ""
+    },
+    {
+      "id": "LOGIN-2023112379",
+      "operator": "唐昊",
+      "function": "并发登录及首次奖励",
+      "expected": "登录成功，首次奖励 100 EDU",
+      "actual": "HTTP 200，奖励 100 EDU，余额 100",
+      "passed": true,
+      "balance_change": "+100 EDU",
+      "reference": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+      "elapsed_seconds": 0.708,
+      "notes": ""
+    },
+    {
+      "id": "LOGIN-2023112385",
+      "operator": "薛雨凇",
+      "function": "并发登录及首次奖励",
+      "expected": "登录成功，首次奖励 100 EDU",
+      "actual": "HTTP 200，奖励 100 EDU，余额 100",
+      "passed": true,
+      "balance_change": "+100 EDU",
+      "reference": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+      "elapsed_seconds": 0.786,
+      "notes": ""
+    },
+    {
+      "id": "LOGIN-admin_2023112379",
+      "operator": "唐昊（管理员）",
+      "function": "并发登录及首次奖励",
+      "expected": "登录成功，首次奖励 0 EDU",
+      "actual": "HTTP 200，奖励 0 EDU，余额 0",
+      "passed": true,
+      "balance_change": "+0 EDU",
+      "reference": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+      "elapsed_seconds": 0.791,
+      "notes": ""
+    },
+    {
+      "id": "LOGIN-2023112380",
+      "operator": "于骐畅",
+      "function": "并发登录及首次奖励",
+      "expected": "登录成功，首次奖励 100 EDU",
+      "actual": "HTTP 200，奖励 100 EDU，余额 100",
+      "passed": true,
+      "balance_change": "+100 EDU",
+      "reference": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65",
+      "elapsed_seconds": 1.141,
+      "notes": ""
+    },
+    {
+      "id": "LOGIN-2023112318",
+      "operator": "周子皓",
+      "function": "并发登录及首次奖励",
+      "expected": "登录成功，首次奖励 100 EDU",
+      "actual": "HTTP 200，奖励 100 EDU，余额 100",
+      "passed": true,
+      "balance_change": "+100 EDU",
+      "reference": "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc",
+      "elapsed_seconds": 1.182,
+      "notes": ""
+    },
+    {
+      "id": "LOGIN-2023112330",
+      "operator": "王东涵",
+      "function": "并发登录及首次奖励",
+      "expected": "登录成功，首次奖励 100 EDU",
+      "actual": "HTTP 200，奖励 100 EDU，余额 100",
+      "passed": true,
+      "balance_change": "+100 EDU",
+      "reference": "0x976EA74026E726554dB657fA54763abd0C3a0aa9",
+      "elapsed_seconds": 1.374,
+      "notes": ""
+    },
+    {
+      "id": "LOGIN-2023112392",
+      "operator": "李子彤",
+      "function": "并发登录及首次奖励",
+      "expected": "登录成功，首次奖励 100 EDU",
+      "actual": "HTTP 200，奖励 100 EDU，余额 100",
+      "passed": true,
+      "balance_change": "+100 EDU",
+      "reference": "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f",
+      "elapsed_seconds": 1.395,
+      "notes": ""
+    },
+    {
+      "id": "LOGIN-2023112317",
+      "operator": "方天宇",
+      "function": "并发登录及首次奖励",
+      "expected": "登录成功，首次奖励 100 EDU",
+      "actual": "HTTP 200，奖励 100 EDU，余额 100",
+      "passed": true,
+      "balance_change": "+100 EDU",
+      "reference": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+      "elapsed_seconds": 1.431,
+      "notes": ""
+    },
+    {
+      "id": "LOGIN-2023116100",
+      "operator": "谢傲宇",
+      "function": "并发登录及首次奖励",
+      "expected": "登录成功，首次奖励 100 EDU",
+      "actual": "HTTP 200，奖励 100 EDU，余额 100",
+      "passed": true,
+      "balance_change": "+100 EDU",
+      "reference": "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955",
+      "elapsed_seconds": 1.503,
+      "notes": ""
+    },
+    {
+      "id": "LOGIN-UNIQUE",
+      "operator": "管理员",
+      "function": "九账号钱包唯一性",
+      "expected": "9 个账号对应 9 个不同钱包",
+      "actual": "读取 9 个钱包，唯一值 9",
+      "passed": true,
+      "balance_change": "",
+      "reference": "",
+      "elapsed_seconds": null,
+      "notes": ""
+    },
+    {
+      "id": "LOGIN-IDEMPOTENT",
+      "operator": "全部账号",
+      "function": "并发重复登录奖励幂等",
+      "expected": "重复登录均不再次发放奖励",
+      "actual": "{\"2023112379\": 0, \"admin_2023112379\": 0, \"2023112385\": 0, \"2023112380\": 0, \"2023112318\": 0, \"2023112330\": 0, \"2023116100\": 0, \"2023112392\": 0, \"2023112317\": 0}",
+      "passed": true,
+      "balance_change": "",
+      "reference": "",
+      "elapsed_seconds": null,
+      "notes": ""
+    },
+    {
+      "id": "UPLOAD-A",
+      "operator": "唐昊",
+      "function": "上传公开资料 A",
+      "expected": "上传成功、SHA-256 一致、奖励 20 EDU",
+      "actual": "HTTP 200，资料 MAT_1781457372_9c3fc361，余额 100->120",
+      "passed": true,
+      "balance_change": "100->120",
+      "reference": "MAT_1781457372_9c3fc361 0xbbc791a656808055c76443b6f6458c8526e1e1812dbd98d323b5e2d36849089b",
+      "elapsed_seconds": 2.242,
+      "notes": ""
+    },
+    {
+      "id": "UPLOAD-B",
+      "operator": "薛雨凇",
+      "function": "完全重复文件拦截",
+      "expected": "HTTP 400，不新增资料，不发放奖励",
+      "actual": "HTTP 400: 文件已存在，与资料 MAT_1781457372_9c3fc361 完全相同（SHA-256 匹配）",
+      "passed": true,
+      "balance_change": "100->100",
+      "reference": "",
+      "elapsed_seconds": 1.36,
+      "notes": ""
+    },
+    {
+      "id": "UPLOAD-D",
+      "operator": "薛雨凇",
+      "function": "并发上传资料 D",
+      "expected": "上传成功并奖励 20 EDU",
+      "actual": "HTTP 200，资料 MAT_1781457380_077a0491，余额 +20",
+      "passed": true,
+      "balance_change": "100->120",
+      "reference": "MAT_1781457380_077a0491 0x64dffda6b9a2e32880330dc248274c045cf5adaccce5b60477b2a589f5210fe6",
+      "elapsed_seconds": 1.153,
+      "notes": ""
+    },
+    {
+      "id": "UPLOAD-H",
+      "operator": "李子彤",
+      "function": "并发上传资料 H",
+      "expected": "上传成功并奖励 20 EDU",
+      "actual": "HTTP 200，资料 MAT_1781457380_e9e778f9，余额 +20",
+      "passed": true,
+      "balance_change": "100->120",
+      "reference": "MAT_1781457380_e9e778f9 0x1f6fdc656dabb392fa59ab1a0bcff78175df7a070b68cb1a7f23cf1f201d967b",
+      "elapsed_seconds": 1.206,
+      "notes": ""
+    },
+    {
+      "id": "UPLOAD-E",
+      "operator": "周子皓",
+      "function": "并发上传资料 E",
+      "expected": "上传成功并奖励 20 EDU",
+      "actual": "HTTP 200，资料 MAT_1781457381_e6727a29，余额 +20",
+      "passed": true,
+      "balance_change": "100->120",
+      "reference": "MAT_1781457381_e6727a29 0x09a3fda86fd7615867efdecd85c780295eb204b2219979836cb219d291f693bb",
+      "elapsed_seconds": 1.676,
+      "notes": ""
+    },
+    {
+      "id": "UPLOAD-F",
+      "operator": "王东涵",
+      "function": "并发上传资料 F",
+      "expected": "上传成功并奖励 20 EDU",
+      "actual": "HTTP 200，资料 MAT_1781457381_ddd577b1，余额 +20",
+      "passed": true,
+      "balance_change": "100->120",
+      "reference": "MAT_1781457381_ddd577b1 0x94834c0de4c0e4ed2f4fdeafa3f4ac02050b50c3522cdec348ab0790cba71e8b",
+      "elapsed_seconds": 1.762,
+      "notes": ""
+    },
+    {
+      "id": "UPLOAD-G",
+      "operator": "谢傲宇",
+      "function": "并发上传资料 G",
+      "expected": "上传成功并奖励 20 EDU",
+      "actual": "HTTP 200，资料 MAT_1781457381_09c7867b，余额 +20",
+      "passed": true,
+      "balance_change": "100->120",
+      "reference": "MAT_1781457381_09c7867b 0x26e955837469d37182b4e5c7120b896160bd78625f1b6b6744b8365e703930d8",
+      "elapsed_seconds": 1.849,
+      "notes": ""
+    },
+    {
+      "id": "UPLOAD-C",
+      "operator": "于骐畅",
+      "function": "并发上传资料 C",
+      "expected": "上传成功并奖励 20 EDU，提示与资料 A 相似",
+      "actual": "HTTP 200，资料 MAT_1781457381_8f7a8549，余额 +20",
+      "passed": true,
+      "balance_change": "100->120",
+      "reference": "MAT_1781457381_8f7a8549 0x16874cf66380abcefe12ca046cc9fa1435f022098a51a7caf91a2a7b62ca48cd",
+      "elapsed_seconds": 1.919,
+      "notes": "[{\"classification\": \"derived\", \"hamming_distance\": 25, \"material_id\": \"MAT_1781457372_9c3fc361\", \"material_name\": \"A_区块链技术及应用课程复习资料.pdf\", \"similarity_percent\": 90.23}]"
+    },
+    {
+      "id": "VERIFY-A",
+      "operator": "李子彤",
+      "function": "资料 A 原文件完整性验证",
+      "expected": "SHA-256 匹配，未篡改",
+      "actual": "{\"added_keywords\": [], \"classification\": \"identical\", \"common_keywords\": [\"256\", \"EduChain\", \"SHA\", \"SimHash\", \"上传\", \"下载\", \"交易\", \"区块\", \"合约\", \"哈希\", \"完整性\", \"扣罚\", \"文件\", \"智能\", \"测试\", \"节点\", \"课程\", \"资料\", \"通证\", \"验证\"], \"hamming_distance\": 0, \"is_tampered\": false, \"removed_keywords\": [], \"sha256_chain\": \"24fcfe9f5cae438b450d7c185bd5450b1eb9d1df48b6352e5add7258913b706b\", \"sha256_local\": \"24fcfe9f5cae438b450d7c185bd5450b1eb9d1df48b6352e5add7258913b706b\", \"sha256_match\": true, \"sim_hash_chain\": \"0x8f30a25ce109e166d3cccd47ca2b704adf13f581e528581bda6bcc9aab8f09ca\", \"sim_hash_local\": \"0x8f30a25ce109e166d3cccd47ca2b704adf13f581e528581bda6bcc9aab8f09ca\", \"similarity_percent\": 100.0, \"text_length_chain\": 0, \"text_length_local\": 1634}",
+      "passed": true,
+      "balance_change": "",
+      "reference": "MAT_1781457372_9c3fc361",
+      "elapsed_seconds": 1.829,
+      "notes": ""
+    },
+    {
+      "id": "VERIFY-I",
+      "operator": "李子彤",
+      "function": "篡改文件 I 对照资料 A",
+      "expected": "SHA-256 不匹配，判定被篡改",
+      "actual": "{\"added_keywords\": [\"BC401\", \"上架\", \"修改\", \"内容\", \"用于\", \"篡改\", \"系统\", \"说明\"], \"classification\": \"different\", \"common_keywords\": [\"256\", \"EduChain\", \"SHA\", \"上传\", \"区块\", \"哈希\", \"完整性\", \"文件\", \"测试\", \"课程\", \"资料\", \"验证\"], \"hamming_distance\": 68, \"is_tampered\": true, \"removed_keywords\": [\"SimHash\", \"下载\", \"交易\", \"合约\", \"扣罚\", \"智能\", \"节点\", \"通证\"], \"sha256_chain\": \"24fcfe9f5cae438b450d7c185bd5450b1eb9d1df48b6352e5add7258913b706b\", \"sha256_local\": \"1066a75b20758c1a84f4f671608be04c9c55e1f140a1738a5c58f1d08ec97525\", \"sha256_match\": false, \"sim_hash_chain\": \"0x8f30a25ce109e166d3cccd47ca2b704adf13f581e528581bda6bcc9aab8f09ca\", \"sim_hash_local\": \"0xb81ee34e01bad66c2594609ea2772aacd91fd02a5aa901cdb0bc8daa1ce8bda\", \"similarity_percent\": 73.44, \"text_length_chain\": 0, \"text_length_local\": 654}",
+      "passed": true,
+      "balance_change": "",
+      "reference": "MAT_1781457372_9c3fc361",
+      "elapsed_seconds": 1.44,
+      "notes": ""
+    },
+    {
+      "id": "DL-E-WANG-DENY",
+      "operator": "王东涵",
+      "function": "无 CS301 权限拒绝",
+      "expected": "HTTP 400，余额变化 +0 EDU",
+      "actual": "HTTP 400: 权限不足: 该资料仅限选修 CS301 的学生下载，余额 120->125",
+      "passed": false,
+      "balance_change": "120->125",
+      "reference": "MAT_1781457381_e6727a29",
+      "elapsed_seconds": 0.643,
+      "notes": ""
+    },
+    {
+      "id": "DL-F-TANG-DENY",
+      "operator": "唐昊",
+      "function": "无 CS302 权限拒绝",
+      "expected": "HTTP 400，余额变化 +0 EDU",
+      "actual": "HTTP 400: 权限不足: 该资料仅限选修 CS302 的学生下载，余额 120->125",
+      "passed": false,
+      "balance_change": "120->125",
+      "reference": "MAT_1781457381_ddd577b1",
+      "elapsed_seconds": 0.624,
+      "notes": ""
+    },
+    {
+      "id": "DL-G-LI-DENY",
+      "operator": "李子彤",
+      "function": "白名单外拒绝",
+      "expected": "HTTP 400，余额变化 +0 EDU",
+      "actual": "HTTP 400: 权限不足: 该资料仅限指定用户下载，余额 120->115",
+      "passed": false,
+      "balance_change": "120->115",
+      "reference": "MAT_1781457381_09c7867b",
+      "elapsed_seconds": 0.719,
+      "notes": ""
+    },
+    {
+      "id": "DL-A-LI",
+      "operator": "李子彤",
+      "function": "公开资料正常下载",
+      "expected": "HTTP 200，余额变化 -5 EDU",
+      "actual": "HTTP 200，153438 bytes，余额 120->115，下载哈希一致",
+      "passed": true,
+      "balance_change": "120->115",
+      "reference": "MAT_1781457372_9c3fc361",
+      "elapsed_seconds": 1.517,
+      "notes": ""
+    },
+    {
+      "id": "DL-F-YU",
+      "operator": "于骐畅",
+      "function": "CS302 同课程下载",
+      "expected": "HTTP 200，余额变化 -5 EDU",
+      "actual": "HTTP 200，42323 bytes，余额 120->115，下载哈希一致",
+      "passed": true,
+      "balance_change": "120->115",
+      "reference": "MAT_1781457381_ddd577b1",
+      "elapsed_seconds": 1.415,
+      "notes": ""
+    },
+    {
+      "id": "DL-E-FANG",
+      "operator": "方天宇",
+      "function": "CS301 同课程下载",
+      "expected": "HTTP 200，余额变化 -5 EDU",
+      "actual": "HTTP 200，126801 bytes，余额 100->85，下载哈希一致",
+      "passed": false,
+      "balance_change": "100->85",
+      "reference": "MAT_1781457381_e6727a29",
+      "elapsed_seconds": 1.691,
+      "notes": ""
+    },
+    {
+      "id": "DL-A-FANG",
+      "operator": "方天宇",
+      "function": "公开资料正常下载",
+      "expected": "HTTP 200，余额变化 -5 EDU",
+      "actual": "HTTP 200，153438 bytes，余额 100->85，下载哈希一致",
+      "passed": false,
+      "balance_change": "100->85",
+      "reference": "MAT_1781457372_9c3fc361",
+      "elapsed_seconds": 2.008,
+      "notes": ""
+    },
+    {
+      "id": "DL-A-XUE",
+      "operator": "薛雨凇",
+      "function": "公开资料正常下载",
+      "expected": "HTTP 200，余额变化 -5 EDU",
+      "actual": "HTTP 200，153438 bytes，余额 120->115，下载哈希一致",
+      "passed": true,
+      "balance_change": "120->115",
+      "reference": "MAT_1781457372_9c3fc361",
+      "elapsed_seconds": 1.956,
+      "notes": ""
+    },
+    {
+      "id": "DL-G-FANG",
+      "operator": "方天宇",
+      "function": "白名单允许下载",
+      "expected": "HTTP 200，余额变化 -5 EDU",
+      "actual": "HTTP 200，126327 bytes，余额 100->85，下载哈希一致",
+      "passed": false,
+      "balance_change": "100->85",
+      "reference": "MAT_1781457381_09c7867b",
+      "elapsed_seconds": 2.032,
+      "notes": ""
+    },
+    {
+      "id": "DL-UNAUTH",
+      "operator": "未登录用户",
+      "function": "未登录下载拦截",
+      "expected": "HTTP 401",
+      "actual": "HTTP 401: 请先登录",
+      "passed": true,
+      "balance_change": "",
+      "reference": "",
+      "elapsed_seconds": 0.606,
+      "notes": ""
+    },
+    {
+      "id": "ACL-STUDENT-REWARD",
+      "operator": "薛雨凇",
+      "function": "学生调用管理员奖励",
+      "expected": "HTTP 403",
+      "actual": "HTTP 403: 仅管理员可操作",
+      "passed": true,
+      "balance_change": "",
+      "reference": "",
+      "elapsed_seconds": 0.628,
+      "notes": ""
+    },
+    {
+      "id": "ACL-STUDENT-PENALTY",
+      "operator": "薛雨凇",
+      "function": "学生调用管理员扣罚",
+      "expected": "HTTP 403",
+      "actual": "HTTP 403: 仅管理员可操作",
+      "passed": true,
+      "balance_change": "",
+      "reference": "",
+      "elapsed_seconds": 0.565,
+      "notes": ""
+    },
+    {
+      "id": "ACL-STUDENT-DELETE",
+      "operator": "王东涵",
+      "function": "学生删除他人资料",
+      "expected": "HTTP 403",
+      "actual": "HTTP 403: 只能删除自己上传的资料",
+      "passed": true,
+      "balance_change": "",
+      "reference": "",
+      "elapsed_seconds": 0.632,
+      "notes": ""
+    },
+    {
+      "id": "OWNER-UPDATE",
+      "operator": "周子皓",
+      "function": "上传者修改自己的资料元数据",
+      "expected": "接口成功且再次查询可见新名称",
+      "actual": "更新 HTTP 200，再次查询名称：E_操作系统进程调度复习资料_所有者更新测试.pdf",
+      "passed": true,
+      "balance_change": "",
+      "reference": "MAT_1781457381_e6727a29",
+      "elapsed_seconds": 0.576,
+      "notes": ""
+    },
+    {
+      "id": "TOKEN-TRANSFER",
+      "operator": "方天宇",
+      "function": "普通用户向唐昊转账 3 EDU",
+      "expected": "发送方 -3，接收方 +3，返回交易哈希",
+      "actual": "HTTP 200，方 85->82，唐 135->138",
+      "passed": true,
+      "balance_change": "方 85->82; 唐 135->138",
+      "reference": "0xb5ff3c930c7f8b43d29c13599742c03a15430f7a9fe00eb59737ae28c2f2a88a",
+      "elapsed_seconds": 0.572,
+      "notes": ""
+    },
+    {
+      "id": "ADMIN-REWARD",
+      "operator": "管理员",
+      "function": "向王东涵发放 10 EDU",
+      "expected": "余额增加 10 EDU",
+      "actual": "HTTP 200，余额 125->135",
+      "passed": true,
+      "balance_change": "125->135",
+      "reference": "0x54ba0896076ae9a5fd626d93474e68f82e596c907f1bae873d9a361ec7f1feb1",
+      "elapsed_seconds": 0.636,
+      "notes": ""
+    },
+    {
+      "id": "ADMIN-PENALTY",
+      "operator": "管理员",
+      "function": "对于骐畅扣罚 20 EDU",
+      "expected": "余额减少 20 EDU",
+      "actual": "HTTP 200，余额 115->95",
+      "passed": true,
+      "balance_change": "115->95",
+      "reference": "0x77a1a6676243a56e9c2d88270a4cef6696c815d2b21eef1ac0d89cbb625e5dab",
+      "elapsed_seconds": 0.64,
+      "notes": ""
+    },
+    {
+      "id": "ADMIN-DELETE",
+      "operator": "管理员",
+      "function": "管理员删除李子彤资料 H",
+      "expected": "删除成功，资料标记为已删除",
+      "actual": "HTTP 200: 删除成功，deleted=True",
+      "passed": true,
+      "balance_change": "",
+      "reference": "MAT_1781457380_e9e778f9",
+      "elapsed_seconds": 0.637,
+      "notes": ""
+    },
+    {
+      "id": "AUDIT-GLOBAL",
+      "operator": "管理员",
+      "function": "全局下载审计",
+      "expected": "管理员可读取全部成功下载记录",
+      "actual": "HTTP 200，记录 6 条",
+      "passed": true,
+      "balance_change": "",
+      "reference": "MAT_1781457372_9c3fc361",
+      "elapsed_seconds": 0.652,
+      "notes": ""
+    },
+    {
+      "id": "ACL-STUDENT-AUDIT",
+      "operator": "薛雨凇",
+      "function": "学生查看全局审计",
+      "expected": "HTTP 403",
+      "actual": "HTTP 403: 仅管理员可查看全局审计",
+      "passed": true,
+      "balance_change": "",
+      "reference": "",
+      "elapsed_seconds": 1.199,
+      "notes": ""
+    },
+    {
+      "id": "ENV-AFTER",
+      "operator": "管理员",
+      "function": "高并发操作后健康检查",
+      "expected": "服务、链和合约保持正常",
+      "actual": "{\"admin_count\": 1, \"block_number\": 41, \"chain_connected\": true, \"chain_id\": 1337, \"contracts\": {\"download_log\": \"0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0\", \"edu_token\": \"0x5FbDB2315678afecb367f032d93F642f64180aa3\", \"material_registry\": \"0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512\"}, \"contracts_ready\": true, \"deployer\": \"0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266\", \"download_count\": 6, \"ganache_connected\": true, \"ganache_url\": \"http://ganache:8545\", \"material_count\": 7, \"network\": \"ganache\", \"status\": \"running\", \"student_count\": 8, \"users_count\": 9, \"wallets_ready\": 9}",
+      "passed": true,
+      "balance_change": "",
+      "reference": "",
+      "elapsed_seconds": null,
+      "notes": ""
+    }
+  ],
+  "issues": [],
+  "duplicate_login_rewards": {
+    "2023112379": 0,
+    "admin_2023112379": 0,
+    "2023112385": 0,
+    "2023112380": 0,
+    "2023112318": 0,
+    "2023112330": 0,
+    "2023116100": 0,
+    "2023112392": 0,
+    "2023112317": 0
+  },
+  "summary": {
+    "passed": 40,
+    "failed": 6,
+    "total": 46,
+    "pass_rate_percent": 86.96
+  }
+}

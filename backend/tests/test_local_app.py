@@ -218,6 +218,7 @@ class LocalAppBehaviorTests(unittest.TestCase):
             )
             chain = SimpleNamespace(
                 query_material=mock.Mock(return_value=material),
+                get_downloads_by_material=mock.Mock(return_value=[]),
                 record_download=mock.Mock(),
             )
             verification = SimpleNamespace(is_tampered=False)
@@ -304,7 +305,7 @@ class LocalAppBehaviorTests(unittest.TestCase):
 
             @staticmethod
             def get_transaction_count(address, block_identifier=None):
-                self.assertEqual(block_identifier, "pending")
+                assert block_identifier == "pending"
                 return 7
 
             def send_raw_transaction(self, raw_tx):
@@ -326,6 +327,170 @@ class LocalAppBehaviorTests(unittest.TestCase):
 
         self.assertEqual(fake_eth.sent_raw_tx, b"signed-raw-tx")
         self.assertEqual(receipt["status"], 1)
+
+    def test_material_metadata_update_is_persisted_and_applied(self):
+        material_module = importlib.import_module("services.material_service")
+        chain_module = importlib.import_module("services.chain_service")
+        material = chain_module.MaterialData(
+            id="MAT_META_001",
+            name="旧名称",
+            course="CS201",
+            uploader="0x0000000000000000000000000000000000000001",
+            sha256_hash="0x" + "1" * 64,
+            sim_hash=1,
+            text_length=10,
+            policy_type=0,
+            policy_value="",
+            price=5,
+            version=1,
+            deleted=False,
+            timestamp=1,
+        )
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            metadata_file = Path(temp_dir) / "material_metadata.json"
+            with mock.patch.object(
+                material_module.config,
+                "MATERIAL_METADATA_FILE",
+                str(metadata_file),
+            ):
+                material_module.MaterialService.update_metadata(
+                    material.id,
+                    name="新名称",
+                    course="CS301",
+                    policy_type=1,
+                    policy_value="CS301",
+                    price=9,
+                )
+                with mock.patch.object(
+                    material_module.chain_service,
+                    "query_material",
+                    return_value=material,
+                ):
+                    result = material_module.MaterialService.get_material(
+                        material.id
+                    )
+
+            self.assertTrue(metadata_file.exists())
+            self.assertEqual(result["name"], "新名称")
+            self.assertEqual(result["course"], "CS301")
+            self.assertEqual(result["price"], 9)
+
+    def test_paid_download_is_refunded_when_audit_write_fails(self):
+        material_module = importlib.import_module("services.material_service")
+        chain_module = importlib.import_module("services.chain_service")
+        uploader = "0x0000000000000000000000000000000000000001"
+        downloader = "0x0000000000000000000000000000000000000002"
+        material = chain_module.MaterialData(
+            id="MAT_REFUND_001",
+            name="退款测试",
+            course="CS201",
+            uploader=uploader,
+            sha256_hash="0x" + "2" * 64,
+            sim_hash=2,
+            text_length=10,
+            policy_type=0,
+            policy_value="",
+            price=5,
+            version=1,
+            deleted=False,
+            timestamp=1,
+        )
+
+        class FakeChain:
+            def __init__(self):
+                self.balances = {uploader: 20, downloader: 100}
+
+            def query_material(self, material_id):
+                return material
+
+            def get_edu_balance(self, address):
+                return self.balances[address]
+
+            def get_downloads_by_material(self, material_id):
+                return []
+
+            def download_material(self, material_id, address):
+                self.balances[downloader] -= material.price
+                self.balances[uploader] += material.price
+                return {"transactionHash": bytes.fromhex("04" * 32)}
+
+            def record_download(self, **kwargs):
+                raise TimeoutError("audit timeout")
+
+            def transfer_edu(self, from_addr, to_addr, amount):
+                self.balances[from_addr] -= amount
+                self.balances[to_addr] += amount
+                return {"transactionHash": bytes.fromhex("05" * 32)}
+
+        fake_chain = FakeChain()
+        verification = SimpleNamespace(is_tampered=False)
+        with tempfile.TemporaryDirectory() as temp_dir:
+            stored = Path(temp_dir) / "MAT_REFUND_001.txt"
+            stored.write_text("refund test", encoding="utf-8")
+            with mock.patch.object(material_module.config, "UPLOAD_FOLDER", temp_dir):
+                with mock.patch.object(material_module, "chain_service", fake_chain):
+                    with mock.patch.object(
+                        material_module,
+                        "verify_file_integrity",
+                        return_value=verification,
+                    ):
+                        with self.assertRaisesRegex(
+                            RuntimeError,
+                            "支付已自动退回",
+                        ):
+                            material_module.MaterialService.download(
+                                material.id,
+                                downloader,
+                                [],
+                            )
+
+        self.assertEqual(fake_chain.balances[downloader], 100)
+        self.assertEqual(fake_chain.balances[uploader], 20)
+
+    def test_admin_delete_passes_uploader_to_legacy_contract(self):
+        from flask import Flask
+
+        material_routes = importlib.import_module("routes.material")
+        user_module = importlib.import_module("services.user_service")
+        app = Flask(__name__)
+        app.config.update(TESTING=True, SECRET_KEY="test")
+        app.register_blueprint(
+            material_routes.material_bp,
+            url_prefix="/api/material",
+        )
+        client = app.test_client()
+        admin_address = "0x0000000000000000000000000000000000000009"
+        uploader = "0x0000000000000000000000000000000000000001"
+        with client.session_transaction() as session:
+            session["user"] = {
+                "student_id": "admin_2023112379",
+                "eth_address": admin_address,
+            }
+
+        material_data = {
+            "id": "MAT_ADMIN_DELETE",
+            "uploader": uploader,
+        }
+        with mock.patch.object(
+            material_routes.material_service,
+            "get_material",
+            return_value=material_data,
+        ), mock.patch.object(
+            user_module.user_service,
+            "is_admin",
+            return_value=True,
+        ), mock.patch.object(
+            material_routes.material_service,
+            "soft_delete",
+            return_value={"deleted": True},
+        ) as soft_delete:
+            response = client.delete(
+                "/api/material/MAT_ADMIN_DELETE"
+            )
+
+        self.assertEqual(response.status_code, 200)
+        soft_delete.assert_called_once_with("MAT_ADMIN_DELETE", uploader)
 
 
 if __name__ == "__main__":

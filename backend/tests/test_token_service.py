@@ -12,6 +12,7 @@ token_service 业务逻辑测试
 import sys
 import os
 import hashlib
+import time
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
@@ -20,6 +21,8 @@ from services.token_service import token_service
 
 
 def test_all():
+    material_id = f"MAT_TOKEN_TEST_{time.time_ns()}"
+
     print("=" * 60)
     print("  EduChain token_service 业务逻辑测试")
     print("=" * 60)
@@ -44,10 +47,10 @@ def test_all():
     # ---------- 抄袭扣罚 ----------
     print("\n[2] 测试抄袭扣罚...")
     # 先注册一个资料供扣罚引用
-    content = b"Token service test material content."
+    content = f"Token service test material content: {material_id}".encode()
     sha256_hash = hashlib.sha256(content).digest()
     chain_service.register_material(
-        material_id="MAT_TOKEN_TEST",
+        material_id=material_id,
         name="操作系统课件",
         course="CS301",
         uploader=user_c,
@@ -60,7 +63,7 @@ def test_all():
     )
 
     bal_before = token_service.get_balance(user_c)
-    result = token_service.penalize_plagiarism(user_c, "MAT_TOKEN_TEST")
+    result = token_service.penalize_plagiarism(user_c, material_id)
     bal_after = token_service.get_balance(user_c)
     print(f"    UserC: {bal_before} → {bal_after} EDU（-{result['amount']} 扣罚）")
     print(f"    ✅ 扣罚完成")
@@ -70,7 +73,7 @@ def test_all():
     remaining = token_service.get_balance(user_d)
     if remaining > 0:
         chain_service.burn_edu(user_d, remaining, "test_drain")
-    result = token_service.penalize_plagiarism(user_d, "MAT_TOKEN_TEST")
+    result = token_service.penalize_plagiarism(user_d, material_id)
     assert result["amount"] == 0
     print(f"    ✅ 余额为 0，扣罚 0 EDU: {result['note']}")
 

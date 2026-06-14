@@ -19,6 +19,9 @@ from pathlib import Path
 from typing import Optional
 from urllib.parse import urlsplit, urlunsplit
 
+from eth_account import Account
+from requests.exceptions import ConnectionError as RequestsConnectionError
+from requests.exceptions import Timeout as RequestsTimeout
 from web3 import Web3
 from web3.contract import Contract
 
@@ -190,6 +193,7 @@ class ChainService:
         # 部署者账户
         accounts = self.w3.eth.accounts
         self.deployer = accounts[config.DEPLOYER_ACCOUNT_INDEX]
+        self.deployer_key = self._derive_deployer_key(self.deployer)
 
         # 实例化合约
         self._token = self._get_contract("EduToken", config.EDU_TOKEN_ADDRESS)
@@ -203,7 +207,15 @@ class ChainService:
         attempted_urls: list[str] = []
         for candidate_url in self._candidate_ganache_urls(config.GANACHE_URL):
             attempted_urls.append(candidate_url)
-            w3 = Web3(Web3.HTTPProvider(candidate_url))
+            try:
+                provider = Web3.HTTPProvider(
+                    candidate_url,
+                    request_kwargs={"timeout": config.WEB3_HTTP_TIMEOUT},
+                )
+            except TypeError:
+                # 保持测试替身及旧版 provider 的兼容性。
+                provider = Web3.HTTPProvider(candidate_url)
+            w3 = Web3(provider)
             if w3.is_connected():
                 config.GANACHE_URL = candidate_url
                 os.environ["GANACHE_URL"] = candidate_url
@@ -298,6 +310,29 @@ class ChainService:
         if not self._initialized:
             raise RuntimeError("ChainService 未初始化，请先调用 init_app()")
 
+    @staticmethod
+    def _derive_deployer_key(deployer: str) -> Optional[str]:
+        """从固定助记词派生部署者私钥，供管理交易显式签名。"""
+        if not isinstance(deployer, str) or len(deployer) != 42:
+            return None
+
+        Account.enable_unaudited_hdwallet_features()
+        account = Account.from_mnemonic(
+            config.GANACHE_MNEMONIC,
+            account_path=(
+                f"m/44'/60'/0'/0/{config.DEPLOYER_ACCOUNT_INDEX}"
+            ),
+        )
+        if account.address.lower() != deployer.lower():
+            raise ValueError("部署者地址与 GANACHE_MNEMONIC 派生结果不一致")
+
+        private_key = account.key.hex()
+        return (
+            private_key
+            if private_key.startswith("0x")
+            else f"0x{private_key}"
+        )
+
     def _transaction_lock(self, address: str) -> threading.RLock:
         key = address.lower()
         with self._transaction_locks_guard:
@@ -314,12 +349,27 @@ class ChainService:
         适用于：deployer/owner 发起的管理交易、Ganache 开发环境。
         """
         sender = from_addr or self.deployer
+        if (
+            self.deployer_key
+            and self.deployer
+            and sender.lower() == self.deployer.lower()
+        ):
+            return self._send_signed_tx(
+                contract_fn,
+                self.deployer_key,
+                self.deployer,
+                gas,
+            )
+
         with self._transaction_lock(sender):
             tx_hash = contract_fn.transact({
                 "from": sender,
                 "gas": gas,
             })
-            receipt = self.w3.eth.wait_for_transaction_receipt(tx_hash, timeout=30)
+            receipt = self.w3.eth.wait_for_transaction_receipt(
+                tx_hash,
+                timeout=config.TRANSACTION_RECEIPT_TIMEOUT,
+            )
             if receipt["status"] != 1:
                 raise RuntimeError(f"交易失败: tx={tx_hash.hex()}")
             return dict(receipt)
@@ -363,8 +413,17 @@ class ChainService:
             if raw_tx is None:
                 raise AttributeError("SignedTransaction 缺少 raw transaction 字段")
 
-            tx_hash = self.w3.eth.send_raw_transaction(raw_tx)
-            receipt = self.w3.eth.wait_for_transaction_receipt(tx_hash, timeout=30)
+            expected_hash = Web3.keccak(raw_tx)
+            try:
+                tx_hash = self.w3.eth.send_raw_transaction(raw_tx)
+            except (RequestsTimeout, RequestsConnectionError):
+                # HTTP 响应超时不等于交易未提交，按本地可计算的哈希继续查回执。
+                tx_hash = expected_hash
+
+            receipt = self.w3.eth.wait_for_transaction_receipt(
+                tx_hash,
+                timeout=config.TRANSACTION_RECEIPT_TIMEOUT,
+            )
             if receipt["status"] != 1:
                 raise RuntimeError(f"交易失败: tx={tx_hash.hex()}")
             return dict(receipt)
@@ -632,11 +691,14 @@ class ChainService:
         """查询资料的修改记录（从 MaterialUpdated 事件，客户端过滤）"""
         self._ensure_init()
         try:
-            target = Web3.keccak(text=material_id).hex()
-            events = self._registry.events.MaterialUpdated.get_logs(from_block=0)
+            target = self._normalize_hex(Web3.keccak(text=material_id))
+            events = self._registry.events.MaterialUpdated.get_logs(
+                fromBlock=0,
+                toBlock="latest",
+            )
             records = []
             for ev in events:
-                ev_id = ev.args.id.hex() if isinstance(ev.args.id, bytes) else ev.args.id
+                ev_id = self._normalize_hex(ev.args.id)
                 if ev_id == target:
                     records.append(UpdateRecord(
                         material_id=material_id,
@@ -653,11 +715,14 @@ class ChainService:
         """查询资料的删除记录（从 MaterialDeleted 事件，客户端过滤）"""
         self._ensure_init()
         try:
-            target = Web3.keccak(text=material_id).hex()
-            events = self._registry.events.MaterialDeleted.get_logs(from_block=0)
+            target = self._normalize_hex(Web3.keccak(text=material_id))
+            events = self._registry.events.MaterialDeleted.get_logs(
+                fromBlock=0,
+                toBlock="latest",
+            )
             records = []
             for ev in events:
-                ev_id = ev.args.id.hex() if isinstance(ev.args.id, bytes) else ev.args.id
+                ev_id = self._normalize_hex(ev.args.id)
                 if ev_id == target:
                     records.append(DeleteRecord(
                         material_id=material_id,
@@ -757,6 +822,13 @@ class ChainService:
             file_hash=raw[4].hex() if isinstance(raw[4], bytes) else raw[4],
             timestamp=raw[5],
         )
+
+    @staticmethod
+    def _normalize_hex(value) -> str:
+        """统一 bytes、HexBytes 和 0x 字符串的比较格式。"""
+        if hasattr(value, "hex"):
+            value = value.hex()
+        return str(value).lower().removeprefix("0x")
 
 
 # ========== 全局单例 ==========

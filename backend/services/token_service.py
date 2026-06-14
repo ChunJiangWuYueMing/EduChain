@@ -186,47 +186,47 @@ class TokenService:
                 block_timestamps[block_number] = int(block["timestamp"])
             return block_timestamps[block_number]
 
-        # 查询 Transfer 事件（from=address 或 to=address）
-        # Transfer(from, to, value) 是 ERC-20 标准事件
+        # 一次性读取 Transfer 日志后在客户端过滤。eth_getLogs 在 Ganache
+        # 和标准节点上都比临时 filter 稳定，且不会依赖节点保留 filter 状态。
         try:
-            # 作为接收方的事件
-            to_filter = token.events.Transfer.create_filter(
-                from_block=0,
-                argument_filters={"to": addr},
+            events = token.events.Transfer.get_logs(
+                fromBlock=0,
+                toBlock="latest",
             )
-            for event in to_filter.get_all_entries():
+            for event in events:
                 from_addr = event["args"]["from"]
-                # from=0x0 表示 mint
-                is_mint = from_addr == "0x0000000000000000000000000000000000000000"
-                transactions.append({
-                    "type": "mint" if is_mint else "receive",
-                    "from": from_addr,
-                    "to": event["args"]["to"],
-                    "amount": event["args"]["value"],
-                    "block": event["blockNumber"],
-                    "tx_hash": event["transactionHash"].hex(),
-                    "timestamp": get_timestamp(event["blockNumber"]),
-                })
-
-            # 作为发送方的事件
-            from_filter = token.events.Transfer.create_filter(
-                from_block=0,
-                argument_filters={"from": addr},
-            )
-            for event in from_filter.get_all_entries():
                 to_address = event["args"]["to"]
-                is_burn = to_address == "0x0000000000000000000000000000000000000000"
-                transactions.append({
-                    "type": "burn" if is_burn else "send",
-                    "from": event["args"]["from"],
+                block_number = event["blockNumber"]
+                common = {
+                    "from": from_addr,
                     "to": to_address,
                     "amount": event["args"]["value"],
-                    "block": event["blockNumber"],
+                    "block": block_number,
                     "tx_hash": event["transactionHash"].hex(),
-                    "timestamp": get_timestamp(event["blockNumber"]),
-                })
+                    "timestamp": get_timestamp(block_number),
+                }
+
+                if to_address.lower() == addr.lower():
+                    is_mint = (
+                        from_addr.lower()
+                        == "0x0000000000000000000000000000000000000000"
+                    )
+                    transactions.append({
+                        **common,
+                        "type": "mint" if is_mint else "receive",
+                    })
+
+                if from_addr.lower() == addr.lower():
+                    is_burn = (
+                        to_address.lower()
+                        == "0x0000000000000000000000000000000000000000"
+                    )
+                    transactions.append({
+                        **common,
+                        "type": "burn" if is_burn else "send",
+                    })
         except Exception:
-            # Ganache 可能不完全支持事件过滤，降级为空列表
+            # 节点暂不可用时保持钱包页面可访问。
             pass
 
         # 按区块号排序，取最近 limit 条
