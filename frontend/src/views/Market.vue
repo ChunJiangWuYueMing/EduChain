@@ -1,91 +1,5 @@
 <template>
   <main class="market-page">
-    <aside class="market-sidebar">
-      <div class="sidebar-brand">
-        <img :src="logoUrl" alt="西南交通大学 EduChain" />
-        <p>校园学习资料可信分发</p>
-      </div>
-
-      <nav class="sidebar-nav" aria-label="功能导航">
-        <button
-          v-for="item in navItems"
-          :key="item.label"
-          type="button"
-          class="nav-item"
-          :class="{ active: item.active }"
-          :disabled="!item.path"
-          @click="item.path && router.push(item.path)"
-        >
-          <span v-html="item.icon"></span>
-          {{ item.label }}
-        </button>
-      </nav>
-
-      <img class="sidebar-watermark" :src="sidebarArtUrl" alt="" aria-hidden="true" />
-      <div class="sidebar-bridge" aria-hidden="true"></div>
-
-      <div class="chain-local">
-        <span class="status-dot"></span>
-        <span>Ganache Local</span>
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="m7 10 5 5 5-5" />
-        </svg>
-      </div>
-    </aside>
-
-    <header class="market-header">
-      <h1>资料市场</h1>
-      <div class="header-actions">
-        <button class="icon-button" type="button" aria-label="搜索">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <circle cx="11" cy="11" r="7" />
-            <path d="m20 20-3.5-3.5" />
-          </svg>
-        </button>
-
-        <div class="chain-status">
-          <span>链状态</span>
-          <span class="status-dot"></span>
-          <strong>已连接</strong>
-        </div>
-
-        <section class="user-card" aria-label="当前用户">
-          <div class="avatar">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="12" cy="8" r="4" />
-              <path d="M4 21a8 8 0 0 1 16 0" />
-            </svg>
-          </div>
-          <div class="user-main">
-            <strong>{{ auth.user?.name || '--' }}</strong>
-            <span>学号：{{ auth.user?.student_id || '--' }}</span>
-          </div>
-          <div class="user-metric">
-            <span>EDU 余额</span>
-            <strong>{{ auth.user?.edu_balance ?? '--' }}</strong>
-          </div>
-          <div class="user-address">
-            <span>地址</span>
-            <strong>{{ truncate(auth.user?.eth_address) }}</strong>
-            <button type="button" aria-label="复制地址">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <rect x="9" y="9" width="11" height="11" rx="2" />
-                <rect x="4" y="4" width="11" height="11" rx="2" />
-              </svg>
-            </button>
-          </div>
-          <button class="logout-button" type="button" @click="handleLogout">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M10 17 15 12l-5-5" />
-              <path d="M15 12H3" />
-              <path d="M21 19V5a2 2 0 0 0-2-2h-6" />
-            </svg>
-            登出
-          </button>
-        </section>
-      </div>
-    </header>
-
     <section class="market-content">
       <div class="content-main">
         <section class="hero-card">
@@ -155,7 +69,7 @@
             <path d="M12 8h.01" />
             <path d="M11 12h1v4h1" />
           </svg>
-          当前共 {{ filteredMaterials.length }} 份资料，本周新增 12 份
+          当前共 {{ filteredMaterials.length }} 份资料，数据已与链上状态实时同步
         </div>
 
         <section class="table-card">
@@ -199,7 +113,7 @@
                 </td>
                 <td class="address-cell">
                   {{ item.uploader }}
-                  <button type="button" aria-label="复制上传者地址" @click.stop>
+                  <button type="button" aria-label="复制上传者地址" @click.stop="copyValue(item.uploader, '上传者地址')">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
                       <rect x="9" y="9" width="11" height="11" rx="2" />
                       <rect x="4" y="4" width="11" height="11" rx="2" />
@@ -271,7 +185,7 @@
       <aside class="detail-panel" aria-label="资料详情">
         <header>
           <h2>资料详情</h2>
-          <button type="button" aria-label="关闭详情">
+          <button type="button" aria-label="关闭详情" @click="selectedId = ''">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M18 6 6 18" />
               <path d="m6 6 12 12" />
@@ -300,7 +214,12 @@
               <dt>{{ item.label }}</dt>
               <dd>
                 {{ item.value }}
-                <button v-if="item.copy" type="button" aria-label="复制">
+                <button
+                  v-if="item.copy"
+                  type="button"
+                  :aria-label="`复制${item.label}`"
+                  @click="copyValue(item.value, item.label)"
+                >
                   <svg viewBox="0 0 24 24" aria-hidden="true">
                     <rect x="9" y="9" width="11" height="11" rx="2" />
                     <rect x="4" y="4" width="11" height="11" rx="2" />
@@ -326,7 +245,7 @@
               </svg>
               验证此资料
             </button>
-            <button type="button" class="link-action">查看下载记录</button>
+            <button type="button" class="link-action" @click="viewAudit(selectedMaterial)">查看下载记录</button>
           </div>
         </template>
       </aside>
@@ -338,23 +257,14 @@
 
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
-import api, { formatTime, policyText, truncate } from '@/utils/api'
+import { useRoute, useRouter } from 'vue-router'
+import api, { formatTime, policyText } from '@/utils/api'
 import { useAuthStore } from '@/stores/auth'
-import logoUrl from '@/assets/images/swjtu-logo-white.png'
-import sidebarArtUrl from '@/assets/images/educhain_white_logo.png'
+import { copyText } from '@/utils/clipboard'
 
+const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
-
-const navItems = [
-  { label: '资料市场', active: true, path: '/market', icon: '<svg viewBox="0 0 24 24"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v5h5"/><path d="M10 13h6"/><path d="M10 17h6"/></svg>' },
-  { label: '上传资料', active: false, path: '/upload', icon: '<svg viewBox="0 0 24 24"><path d="M12 3v12"/><path d="m7 8 5-5 5 5"/><path d="M5 15a4 4 0 0 0 0 8h14a4 4 0 0 0 0-8"/></svg>' },
-  { label: '文件验证', active: false, path: '/verify', icon: '<svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg>' },
-  { label: '我的钱包', active: false, path: '/wallet', icon: '<svg viewBox="0 0 24 24"><path d="M4 7h15a2 2 0 0 1 2 2v10H4a2 2 0 0 1-2-2V5a2 2 0 0 0 2 2Z"/><path d="M16 13h4"/></svg>' },
-  { label: '审计追溯', active: false, path: '/audit', icon: '<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><circle cx="11" cy="15" r="2"/><path d="m13 17 3 3"/></svg>' },
-  { label: '系统状态', active: false, path: '/status', icon: '<svg viewBox="0 0 24 24"><path d="M3 4h18v14H3z"/><path d="M8 22h8"/><path d="M12 18v4"/><path d="m7 13 3-3 2 2 4-5"/></svg>' },
-]
 
 const materials = ref([])
 const loading = ref(false)
@@ -383,7 +293,7 @@ const visibleMaterials = computed(() => {
   return filteredMaterials.value.slice(start, start + pageSize.value)
 })
 const totalCount = computed(() => filteredMaterials.value.length)
-const selectedMaterial = computed(() => filteredMaterials.value.find((item) => item.id === selectedId.value) || filteredMaterials.value[0] || null)
+const selectedMaterial = computed(() => filteredMaterials.value.find((item) => item.id === selectedId.value) || null)
 const detailRows = computed(() => {
   if (!selectedMaterial.value) return []
   const item = selectedMaterial.value
@@ -406,8 +316,15 @@ watch([keyword, courseFilter, policyFilter, pageSize], () => {
   currentPage.value = 1
 })
 
+watch(
+  () => route.query.search,
+  (value) => {
+    keyword.value = typeof value === 'string' ? value : ''
+  },
+)
+
 watch(filteredMaterials, (items) => {
-  if (!items.some((item) => item.id === selectedId.value)) {
+  if (selectedId.value && !items.some((item) => item.id === selectedId.value)) {
     selectedId.value = items[0]?.id || ''
   }
 })
@@ -430,6 +347,15 @@ function verifyMaterial(item) {
   router.push({ path: '/verify', query: { materialId: item.id } })
 }
 
+function viewAudit(item) {
+  router.push({ path: '/audit', query: { materialId: item.id } })
+}
+
+async function copyValue(value, label) {
+  const copied = await copyText(String(value ?? ''))
+  showToast(copied ? `${label}已复制` : '复制失败，请手动复制')
+}
+
 async function downloadMaterial(item) {
   if (!item) return
   try {
@@ -446,11 +372,6 @@ async function downloadMaterial(item) {
   } catch (error) {
     showToast(error.message || '下载失败')
   }
-}
-
-async function handleLogout() {
-  await auth.logout()
-  router.push('/login')
 }
 
 function mapMaterial(item) {
@@ -485,7 +406,10 @@ async function loadMaterials() {
   }
 }
 
-onMounted(loadMaterials)
+onMounted(() => {
+  keyword.value = typeof route.query.search === 'string' ? route.query.search : ''
+  loadMaterials()
+})
 </script>
 
 <style scoped>
@@ -1384,5 +1308,32 @@ dd svg {
   border-radius: 999px;
   box-shadow: 0 10px 30px rgba(15, 23, 42, 0.18);
   font-size: 14px;
+}
+
+.market-page {
+  min-width: 0;
+  height: auto;
+  min-height: calc(100vh - var(--header-height));
+  overflow: visible;
+}
+
+.market-content {
+  min-height: calc(100vh - var(--header-height));
+  padding: 16px;
+}
+
+@media (max-width: 1450px) {
+  .market-content {
+    grid-template-columns: minmax(0, 1fr) 300px;
+  }
+
+  .content-main,
+  .detail-panel {
+    min-width: 0;
+  }
+
+  .table-card {
+    overflow-x: auto;
+  }
 }
 </style>

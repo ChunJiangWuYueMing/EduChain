@@ -1,196 +1,194 @@
 <template>
-  <aside class="app-sidebar">
-    <div class="sidebar-brand">
-      <img class="school-logo" :src="swjtuLogo" alt="西南交通大学校徽" />
-
-      <div class="brand-text">
-        <div class="brand-title">EduChain</div>
-        <div class="brand-subtitle">区块链综合实验平台</div>
-      </div>
+  <aside class="shell-sidebar">
+    <div class="shell-brand">
+      <img :src="logoUrl" alt="西南交通大学 EduChain" />
+      <p>校园学习资料可信分发</p>
     </div>
 
-    <nav class="sidebar-nav">
+    <nav class="shell-nav" aria-label="功能导航">
       <RouterLink
-        v-for="item in navItems"
+        v-for="item in appNavigation"
         :key="item.path"
         :to="item.path"
-        class="nav-item"
-        active-class="active"
+        class="shell-nav-item"
       >
-        <span class="nav-icon">{{ item.icon }}</span>
-        <span class="nav-label">{{ item.label }}</span>
+        <span class="shell-nav-icon" v-html="item.icon"></span>
+        <span>{{ item.label }}</span>
       </RouterLink>
     </nav>
 
-    <div class="sidebar-footer">
-      <div class="chain-card">
-        <div class="chain-card-title">当前链状态</div>
-        <div class="chain-card-value">
-          <span class="dot"></span>
-          运行正常
-        </div>
-      </div>
-    </div>
+    <img class="shell-watermark" :src="sidebarArtUrl" alt="" aria-hidden="true" />
+    <div class="shell-bridge" aria-hidden="true"></div>
+
+    <button class="shell-chain" type="button" @click="system.refresh">
+      <span class="shell-status-dot" :class="{ offline: !system.connected }"></span>
+      <span>{{ system.connected ? 'Ganache Local' : '链连接异常' }}</span>
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M21 12a9 9 0 1 1-2.64-6.36" />
+        <path d="M21 4v6h-6" />
+      </svg>
+    </button>
   </aside>
 </template>
 
 <script setup>
 import { RouterLink } from 'vue-router'
-import swjtuLogo from '@/assets/images/swjtu-logo.png'
+import { appNavigation } from '@/config/navigation'
+import { useSystemStore } from '@/stores/system'
+import logoUrl from '@/assets/images/swjtu-logo-white.png'
+import sidebarArtUrl from '@/assets/images/educhain_white_logo.png'
 
-const navItems = [
-  {
-    label: '数据看板',
-    path: '/dashboard',
-    icon: '▣'
-  },
-  {
-    label: '课程管理',
-    path: '/courses',
-    icon: '▤'
-  },
-  {
-    label: '证书存证',
-    path: '/certificates',
-    icon: '◇'
-  },
-  {
-    label: '链上记录',
-    path: '/records',
-    icon: '◎'
-  },
-  {
-    label: '节点管理',
-    path: '/nodes',
-    icon: '⬡'
-  },
-  {
-    label: '系统设置',
-    path: '/settings',
-    icon: '⚙'
-  }
-]
+const system = useSystemStore()
 </script>
 
 <style scoped>
-.app-sidebar {
+.shell-sidebar {
   position: fixed;
-  left: 0;
-  top: 0;
+  inset: 0 auto 0 0;
   z-index: 20;
-  display: flex;
-  flex-direction: column;
   width: var(--sidebar-width);
-  height: 100vh;
-  background: var(--bg-sidebar);
-  border-right: 1px solid var(--border-color);
-}
-
-.sidebar-brand {
-  display: flex;
-  align-items: center;
-  height: 82px;
-  padding: 0 20px;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.school-logo {
-  width: 42px;
-  height: 42px;
-  object-fit: contain;
-  flex-shrink: 0;
-}
-
-.brand-text {
-  margin-left: 12px;
-  min-width: 0;
-}
-
-.brand-title {
-  font-size: 20px;
-  font-weight: 800;
-  color: var(--primary-color);
-  line-height: 1.2;
-}
-
-.brand-subtitle {
-  margin-top: 4px;
-  font-size: 12px;
-  color: var(--text-secondary);
-  white-space: nowrap;
-}
-
-.sidebar-nav {
-  flex: 1;
-  padding: 18px 12px;
-}
-
-.nav-item {
-  display: flex;
-  align-items: center;
-  height: 44px;
-  padding: 0 14px;
-  margin-bottom: 6px;
-  border-radius: 12px;
-  color: var(--text-secondary);
-  font-size: 14px;
-  transition: 0.2s;
-}
-
-.nav-item:hover {
-  color: var(--primary-color);
-  background: var(--primary-light);
-}
-
-.nav-item.active {
+  overflow: hidden;
   color: #ffffff;
-  background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
-  box-shadow: 0 10px 22px rgba(0, 121, 186, 0.24);
+  background: linear-gradient(180deg, #003a70 0%, #002f60 48%, #00284f 100%);
+  box-shadow: 8px 0 28px rgba(0, 39, 82, 0.2);
 }
 
-.nav-icon {
-  width: 24px;
-  margin-right: 10px;
-  text-align: center;
-  font-size: 15px;
+.shell-brand {
+  height: 177px;
+  padding: 30px 20px 22px;
 }
 
-.nav-label {
-  font-weight: 500;
+.shell-brand img {
+  width: 210px;
+  height: 78px;
+  object-fit: contain;
+  object-position: left center;
 }
 
-.sidebar-footer {
-  padding: 16px;
-  border-top: 1px solid var(--border-color);
+.shell-brand p {
+  margin: 13px 0 0;
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 16px;
+  font-weight: 600;
 }
 
-.chain-card {
-  padding: 14px;
-  border-radius: 14px;
-  background: linear-gradient(135deg, #e6f4fa, #ffffff);
-  border: 1px solid rgba(0, 121, 186, 0.18);
+.shell-nav {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  gap: 10px;
+  padding: 0 8px;
 }
 
-.chain-card-title {
-  font-size: 12px;
-  color: var(--text-secondary);
-}
-
-.chain-card-value {
+.shell-nav-item {
   display: flex;
   align-items: center;
-  margin-top: 8px;
-  font-size: 14px;
+  gap: 15px;
+  height: 60px;
+  padding: 0 22px;
+  color: rgba(255, 255, 255, 0.88);
+  border: 1px solid transparent;
+  border-radius: 6px;
+  font-size: 16px;
   font-weight: 700;
-  color: var(--primary-dark);
+  transition:
+    color 0.18s ease,
+    background 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
 }
 
-.dot {
-  width: 8px;
-  height: 8px;
-  margin-right: 8px;
+.shell-nav-item:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.shell-nav-item.router-link-active {
+  color: #ffffff;
+  background: linear-gradient(135deg, #0079ba 0%, #005f92 100%);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 12px 24px rgba(0, 36, 90, 0.22);
+}
+
+.shell-nav-icon,
+.shell-nav-icon :deep(svg) {
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+}
+
+.shell-nav-icon :deep(svg),
+.shell-chain svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.shell-watermark {
+  position: absolute;
+  z-index: 1;
+  right: -118px;
+  bottom: 148px;
+  width: 340px;
+  height: 340px;
+  object-fit: contain;
+  opacity: 0.1;
+  pointer-events: none;
+  transform: rotate(-10deg);
+  filter: drop-shadow(0 22px 42px rgba(0, 0, 0, 0.16));
+}
+
+.shell-bridge {
+  position: absolute;
+  left: -52px;
+  right: 0;
+  bottom: 96px;
+  height: 210px;
+  opacity: 0.2;
+  border-top: 1px solid rgba(209, 232, 255, 0.35);
+  border-bottom: 1px solid rgba(209, 232, 255, 0.25);
   border-radius: 50%;
-  background: var(--success-color);
+  transform: rotate(-8deg);
+}
+
+.shell-chain {
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  bottom: 18px;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  height: 48px;
+  padding: 0 12px;
+  color: #ffffff;
+  background: rgba(0, 31, 66, 0.42);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.shell-chain svg {
+  width: 18px;
+  height: 18px;
+  margin-left: auto;
+}
+
+.shell-status-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #16a34a;
   box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.12);
+}
+
+.shell-status-dot.offline {
+  background: #ef4444;
+  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.12);
 }
 </style>

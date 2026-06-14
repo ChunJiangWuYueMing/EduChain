@@ -121,6 +121,13 @@ class TokenService:
         addr = chain_service.w3.to_checksum_address(address)
 
         transactions = []
+        block_timestamps = {}
+
+        def get_timestamp(block_number: int) -> int:
+            if block_number not in block_timestamps:
+                block = chain_service.w3.eth.get_block(block_number)
+                block_timestamps[block_number] = int(block["timestamp"])
+            return block_timestamps[block_number]
 
         # 查询 Transfer 事件（from=address 或 to=address）
         # Transfer(from, to, value) 是 ERC-20 标准事件
@@ -141,6 +148,7 @@ class TokenService:
                     "amount": event["args"]["value"],
                     "block": event["blockNumber"],
                     "tx_hash": event["transactionHash"].hex(),
+                    "timestamp": get_timestamp(event["blockNumber"]),
                 })
 
             # 作为发送方的事件
@@ -158,6 +166,7 @@ class TokenService:
                     "amount": event["args"]["value"],
                     "block": event["blockNumber"],
                     "tx_hash": event["transactionHash"].hex(),
+                    "timestamp": get_timestamp(event["blockNumber"]),
                 })
         except Exception:
             # Ganache 可能不完全支持事件过滤，降级为空列表

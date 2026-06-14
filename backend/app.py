@@ -71,6 +71,7 @@ def create_app() -> Flask:
         if connected:
             try:
                 data["block_number"] = chain_service.get_block_number()
+                data["chain_id"] = chain_service.get_chain_id()
                 data["deployer"] = chain_service.deployer
                 data["contracts"] = {
                     "edu_token": config.EDU_TOKEN_ADDRESS,

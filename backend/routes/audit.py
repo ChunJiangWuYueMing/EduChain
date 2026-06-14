@@ -11,13 +11,30 @@ audit.py — 审计路由
   GET /api/audit/full/<id>
 """
 
-from flask import Blueprint
+from flask import Blueprint, session
 
 from services.chain_service import chain_service
 from services.material_service import material_service
-from utils.response import success
+from services.user_service import user_service
+from utils.response import forbidden, success, unauthorized
 
 audit_bp = Blueprint("audit", __name__)
+
+
+@audit_bp.route("/downloads/all", methods=["GET"])
+def all_downloads():
+    """管理员查询全部下载记录。"""
+    user = session.get("user")
+    if user is None:
+        return unauthorized("请先登录")
+    if not user_service.is_admin(user["student_id"]):
+        return forbidden("仅管理员可查看全局审计")
+
+    records = chain_service.get_all_downloads()
+    return success({
+        "records": [record.to_dict() for record in records],
+        "count": len(records),
+    })
 
 
 @audit_bp.route("/downloads/material/<material_id>", methods=["GET"])

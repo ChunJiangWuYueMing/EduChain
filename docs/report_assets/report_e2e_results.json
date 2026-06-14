@@ -1,0 +1,260 @@
+{
+  "run": {
+    "started_at": "2026-06-14T01:29:28+08:00",
+    "finished_at": "2026-06-14T01:29:30+08:00",
+    "base_url": "http://localhost:8080"
+  },
+  "users": {
+    "uploader": {
+      "student_id": "2023116101",
+      "name": "张三",
+      "address": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
+    },
+    "downloader": {
+      "student_id": "2023116102",
+      "name": "李四",
+      "address": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC"
+    },
+    "test_seller": {
+      "student_id": "2023116103",
+      "name": "王五",
+      "address": "0x90F79bf6EB2c4f870365E785982E1f101E93b906"
+    }
+  },
+  "material": {
+    "material_id": "MAT_1781371768_5acf3f72",
+    "name": "区块链技术课件.pptx",
+    "sha256_hash": "2fda9ef3c536e26bada899558048933e840d71fde76752642f666e48d8b26791",
+    "sim_hash": "0xae61d6642199e605c38a8995ca2a74cbe36ca110526b96bb8a68c4b9e18040ca",
+    "text_length": 549,
+    "tx_hash": "0x86b5156b3ec4e56ab37fc30838d645c8feae1555c19d461f3ede58816fca4b1b",
+    "upload_reward": 20,
+    "price": 5,
+    "course": "CS201"
+  },
+  "verification": {
+    "original": {
+      "added_keywords": [],
+      "classification": "identical",
+      "common_keywords": [
+        "DApp",
+        "中心化",
+        "交易",
+        "以太",
+        "区块",
+        "可追溯",
+        "合约",
+        "密码学",
+        "所有",
+        "执行",
+        "数字",
+        "智能",
+        "篡改",
+        "结算",
+        "自动",
+        "节点",
+        "认证",
+        "记录",
+        "账本",
+        "追溯"
+      ],
+      "hamming_distance": 0,
+      "is_tampered": false,
+      "removed_keywords": [],
+      "sha256_chain": "2fda9ef3c536e26bada899558048933e840d71fde76752642f666e48d8b26791",
+      "sha256_local": "2fda9ef3c536e26bada899558048933e840d71fde76752642f666e48d8b26791",
+      "sha256_match": true,
+      "sim_hash_chain": "0xae61d6642199e605c38a8995ca2a74cbe36ca110526b96bb8a68c4b9e18040ca",
+      "sim_hash_local": "0xae61d6642199e605c38a8995ca2a74cbe36ca110526b96bb8a68c4b9e18040ca",
+      "similarity_percent": 100.0,
+      "text_length_chain": 0,
+      "text_length_local": 549
+    },
+    "tampered": {
+      "added_keywords": [
+        "企业级",
+        "场景",
+        "平台",
+        "应用",
+        "开发者",
+        "支持",
+        "每秒",
+        "高性能"
+      ],
+      "classification": "derived",
+      "common_keywords": [
+        "中心化",
+        "交易",
+        "区块",
+        "可追溯",
+        "合约",
+        "所有",
+        "智能",
+        "篡改",
+        "节点",
+        "认证",
+        "账本",
+        "追溯"
+      ],
+      "hamming_distance": 39,
+      "is_tampered": true,
+      "removed_keywords": [
+        "DApp",
+        "以太",
+        "密码学",
+        "执行",
+        "数字",
+        "结算",
+        "自动",
+        "记录"
+      ],
+      "sha256_chain": "2fda9ef3c536e26bada899558048933e840d71fde76752642f666e48d8b26791",
+      "sha256_local": "125d1fb4718bf6b018a6d8373fbae6c18d07292e2a923df0da95d9f7faa8535a",
+      "sha256_match": false,
+      "sim_hash_chain": "0xae61d6642199e605c38a8995ca2a74cbe36ca110526b96bb8a68c4b9e18040ca",
+      "sim_hash_local": "0xaf619a6470dbf614d2ca09d7ca6a7ccaeb7da311426916999b68e4b9d18080ea",
+      "similarity_percent": 84.77,
+      "text_length_chain": 0,
+      "text_length_local": 558
+    }
+  },
+  "balances": {
+    "uploader_before": 100,
+    "uploader_after": 125,
+    "downloader_before": 100,
+    "downloader_after": 95,
+    "downloader_before_insufficient": 95,
+    "downloader_after_insufficient": 95
+  },
+  "audit": {
+    "download_count_for_material": 1,
+    "records": [
+      {
+        "downloader": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+        "file_hash": "2fda9ef3c536e26bada899558048933e840d71fde76752642f666e48d8b26791",
+        "material_id": "MAT_1781371768_5acf3f72",
+        "price": 5,
+        "timestamp": 1781371769,
+        "uploader": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
+      }
+    ],
+    "full_audit": {
+      "deletions": [],
+      "downloads": [
+        {
+          "downloader": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+          "file_hash": "2fda9ef3c536e26bada899558048933e840d71fde76752642f666e48d8b26791",
+          "material_id": "MAT_1781371768_5acf3f72",
+          "price": 5,
+          "timestamp": 1781371769,
+          "uploader": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
+        }
+      ],
+      "material": {
+        "course": "CS201",
+        "course_name": "数据结构",
+        "deleted": false,
+        "id": "MAT_1781371768_5acf3f72",
+        "name": "区块链技术课件.pptx",
+        "policy_type": 0,
+        "policy_value": "",
+        "price": 5,
+        "sha256_hash": "2fda9ef3c536e26bada899558048933e840d71fde76752642f666e48d8b26791",
+        "sim_hash": 78875299492023350558952741110206035308341335797107822723651820804002820407498,
+        "text_length": 549,
+        "timestamp": 1781371768,
+        "uploader": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+        "version": 1
+      },
+      "updates": []
+    }
+  },
+  "negative_tests": {
+    "invalid_login": {
+      "status": 401,
+      "message": "学号或密码错误"
+    },
+    "duplicate_upload": {
+      "status": 400,
+      "message": "文件已存在，与资料 MAT_1781371768_5acf3f72 完全相同（SHA-256 匹配）"
+    },
+    "unauthenticated_download": {
+      "status": 401,
+      "message": "请先登录"
+    },
+    "insufficient_balance": {
+      "status": 400,
+      "message": "EDU 余额不足: 需要 999，当前 95",
+      "test_material_id": "MAT_1781371769_15a7974e",
+      "test_material_deleted": true,
+      "delete_message": "删除成功"
+    }
+  },
+  "timings_seconds": {
+    "invalid_login": 0.089,
+    "login_uploader": 0.096,
+    "upload": 0.922,
+    "duplicate_rejection": 0.026,
+    "verify_original": 0.056,
+    "verify_tampered": 0.061,
+    "login_downloader": 0.118,
+    "download": 0.148,
+    "login_test_seller": 0.111,
+    "high_price_upload": 0.085,
+    "insufficient_rejection": 0.021
+  },
+  "download": {
+    "http_status": 200,
+    "bytes": 32018,
+    "content_type": "application/octet-stream"
+  },
+  "health_before": {
+    "block_number": 5,
+    "contracts": {
+      "download_log": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
+      "edu_token": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+      "material_registry": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512"
+    },
+    "deployer": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+    "download_count": 0,
+    "ganache_connected": true,
+    "ganache_url": "http://ganache:8545",
+    "material_count": 0,
+    "status": "running"
+  },
+  "health_after": {
+    "block_number": 13,
+    "contracts": {
+      "download_log": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0",
+      "edu_token": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+      "material_registry": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512"
+    },
+    "deployer": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+    "download_count": 1,
+    "ganache_connected": true,
+    "ganache_url": "http://ganache:8545",
+    "material_count": 2,
+    "status": "running"
+  },
+  "active_materials": {
+    "total": 1,
+    "item_ids": [
+      "MAT_1781371768_5acf3f72"
+    ]
+  },
+  "restart_recovery": {
+    "verified_at": "2026-06-14T01:42:51+08:00",
+    "containers_restarted": [
+      "educhain-ganache",
+      "educhain-backend",
+      "educhain-frontend"
+    ],
+    "health_http_status": 200,
+    "block_number": 13,
+    "ganache_connected": true,
+    "contract_addresses_unchanged": true,
+    "active_material_count": 1,
+    "download_audit_count": 1,
+    "result": "passed"
+  }
+}

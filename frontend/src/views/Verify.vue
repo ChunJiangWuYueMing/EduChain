@@ -1,106 +1,25 @@
 <template>
   <main class="verify-page">
-    <aside class="app-sidebar">
-      <div class="sidebar-brand">
-        <img :src="logoUrl" alt="西南交通大学 EduChain" />
-        <p>校园学习资料可信分发</p>
-      </div>
-
-      <nav class="sidebar-nav" aria-label="功能导航">
-        <button
-          v-for="item in navItems"
-          :key="item.label"
-          type="button"
-          class="nav-item"
-          :class="{ active: item.active }"
-          :disabled="!item.path"
-          @click="item.path && router.push(item.path)"
-        >
-          <span v-html="item.icon"></span>
-          {{ item.label }}
-        </button>
-      </nav>
-
-      <img class="sidebar-watermark" :src="sidebarArtUrl" alt="" aria-hidden="true" />
-      <div class="sidebar-bridge" aria-hidden="true"></div>
-
-      <div class="chain-local">
-        <span class="status-dot"></span>
-        <span>Ganache Local</span>
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5" /></svg>
-      </div>
-    </aside>
-
-    <header class="app-header">
-      <h1>文件验证</h1>
-      <div class="header-actions">
-        <button class="icon-button" type="button" aria-label="搜索">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <circle cx="11" cy="11" r="7" />
-            <path d="m20 20-3.5-3.5" />
-          </svg>
-        </button>
-        <div class="chain-status">
-          <span>链状态</span>
-          <span class="status-dot"></span>
-          <strong>已连接</strong>
-        </div>
-        <section class="user-card" aria-label="当前用户">
-          <div class="avatar">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="12" cy="8" r="4" />
-              <path d="M4 21a8 8 0 0 1 16 0" />
-            </svg>
-          </div>
-          <div class="user-main">
-            <strong>{{ auth.user?.name || '--' }}</strong>
-            <span>学号：{{ auth.user?.student_id || '--' }}</span>
-          </div>
-          <div class="user-metric">
-            <span>EDU 余额</span>
-            <strong>{{ auth.user?.edu_balance ?? '--' }}</strong>
-          </div>
-          <div class="user-address">
-            <span>地址</span>
-            <strong>{{ truncate(auth.user?.eth_address) }}</strong>
-            <button type="button" aria-label="复制地址">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <rect x="9" y="9" width="11" height="11" rx="2" />
-                <rect x="4" y="4" width="11" height="11" rx="2" />
-              </svg>
-            </button>
-          </div>
-          <button class="logout-button" type="button" @click="handleLogout">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M10 17 15 12l-5-5" />
-              <path d="M15 12H3" />
-              <path d="M21 19V5a2 2 0 0 0-2-2h-6" />
-            </svg>
-            退出
-          </button>
-        </section>
-      </div>
-    </header>
-
     <section class="verify-content">
       <section class="material-bar">
         <label>
           <span>资料 ID</span>
           <input v-model.trim="materialId" type="text" placeholder="请输入链上资料 ID" />
-          <button type="button" aria-label="复制资料 ID">
+          <button type="button" aria-label="复制资料 ID" :disabled="!materialId" @click="copyValue(materialId, '资料 ID')">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <rect x="9" y="9" width="11" height="11" rx="2" />
               <rect x="4" y="4" width="11" height="11" rx="2" />
             </svg>
           </button>
         </label>
-        <button type="button" class="load-button" @click="materialId = 'MAT_20260521_001'">
+        <button type="button" class="load-button" :disabled="!materialId || loadingMaterial" @click="loadMaterial">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M21 12a9 9 0 1 1-2.64-6.36" />
             <path d="M21 4v6h-6" />
           </svg>
-          从资料详情带入
+          {{ loadingMaterial ? '读取中...' : '读取链上资料' }}
         </button>
+        <span v-if="materialName" class="material-name">链上资料：{{ materialName }}</span>
       </section>
 
       <div class="verify-grid">
@@ -123,7 +42,7 @@
               </svg>
             </span>
             <strong>{{ selectedFile ? selectedFile.name : '点击或拖拽文件到此处上传' }}</strong>
-            <p>{{ selectedFile ? formatSize(selectedFile.size) : '支持 PDF、DOCX、PPTX、TXT 等常见格式，单文件 ≤ 100MB' }}</p>
+            <p>{{ selectedFile ? formatSize(selectedFile.size) : '支持 PDF、DOCX、PPTX、TXT、MD，单文件 ≤ 50MB' }}</p>
           </label>
 
           <div v-if="selectedFile" class="file-chip">
@@ -167,7 +86,7 @@
         <section class="report-card">
           <h2>验证报告</h2>
 
-          <div v-if="report" class="danger-banner">
+          <div v-if="report" class="danger-banner" :class="{ trusted: !report.is_tampered }">
             <span>
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" />
@@ -179,7 +98,7 @@
               <strong>{{ report.is_tampered ? '检测到文件差异' : '文件完整可信' }}</strong>
               <p>{{ report.is_tampered ? '该文件与链上记录存在差异，建议人工复核。' : 'SHA-256 与链上记录一致。' }}</p>
             </div>
-            <time>验证时间：2026-05-21 14:32:18</time>
+            <time>验证时间：{{ verificationTime }}</time>
           </div>
 
           <div v-else class="waiting-banner">
@@ -200,8 +119,8 @@
               <dt>{{ row.label }}</dt>
               <dd>
                 <template v-if="row.kind === 'match'">
-                  <span class="fail-dot">×</span>
-                  否
+                  <span :class="row.value === '是' ? 'pass-dot' : 'fail-dot'">{{ row.value === '是' ? '✓' : '×' }}</span>
+                  {{ row.value }}
                 </template>
                 <template v-else-if="row.kind === 'similarity'">
                   <span class="similarity-bar"><i :style="{ width: row.value }"></i></span>
@@ -211,12 +130,17 @@
                   <span class="risk-tag">{{ row.value }}</span>
                 </template>
                 <template v-else-if="row.kind === 'tampered'">
-                  <span class="tampered">是</span>
-                  <span class="fail-dot">!</span>
+                  <span :class="{ tampered: row.value === '是', trusted: row.value === '否' }">{{ row.value }}</span>
+                  <span :class="row.value === '是' ? 'fail-dot' : 'pass-dot'">{{ row.value === '是' ? '!' : '✓' }}</span>
                 </template>
                 <template v-else>
                   {{ row.value }}
-                  <button v-if="row.copy" type="button" aria-label="复制">
+                  <button
+                    v-if="row.copy"
+                    type="button"
+                    :aria-label="`复制${row.label}`"
+                    @click="copyValue(row.value, row.label)"
+                  >
                     <svg viewBox="0 0 24 24" aria-hidden="true">
                       <rect x="9" y="9" width="11" height="11" rx="2" />
                       <rect x="4" y="4" width="11" height="11" rx="2" />
@@ -270,33 +194,23 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import api, { truncate } from '@/utils/api'
-import { useAuthStore } from '@/stores/auth'
-import logoUrl from '@/assets/images/swjtu-logo-white.png'
-import sidebarArtUrl from '@/assets/images/educhain_white_logo.png'
+import { computed, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
+import api from '@/utils/api'
+import { copyText } from '@/utils/clipboard'
 
-const router = useRouter()
 const route = useRoute()
-const auth = useAuthStore()
 const fileInput = ref(null)
 const selectedFile = ref(null)
 const isDragging = ref(false)
 const loading = ref(false)
+const loadingMaterial = ref(false)
 const materialId = ref(String(route.query.materialId || ''))
+const materialName = ref('')
 const report = ref(null)
+const verificationTime = ref('')
 const toast = ref('')
 const acceptedTypes = '.pdf,.docx,.pptx,.txt,.md'
-
-const navItems = [
-  { label: '资料市场', active: false, path: '/market', icon: '<svg viewBox="0 0 24 24"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v5h5"/><path d="M10 13h6"/><path d="M10 17h6"/></svg>' },
-  { label: '上传资料', active: false, path: '/upload', icon: '<svg viewBox="0 0 24 24"><path d="M12 3v12"/><path d="m7 8 5-5 5 5"/><path d="M5 15a4 4 0 0 0 0 8h14a4 4 0 0 0 0-8"/></svg>' },
-  { label: '文件验证', active: true, path: '/verify', icon: '<svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg>' },
-  { label: '我的钱包', active: false, path: '/wallet', icon: '<svg viewBox="0 0 24 24"><path d="M4 7h15a2 2 0 0 1 2 2v10H4a2 2 0 0 1 2 2Z"/><path d="M16 13h4"/></svg>' },
-  { label: '审计追溯', active: false, path: '/audit', icon: '<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><circle cx="11" cy="15" r="2"/><path d="m13 17 3 3"/></svg>' },
-  { label: '系统状态', active: false, path: '/status', icon: '<svg viewBox="0 0 24 24"><path d="M3 4h18v14H3z"/><path d="M8 22h8"/><path d="M12 18v4"/><path d="m7 13 3-3 2 2 4-5"/></svg>' },
-]
 
 const canVerify = computed(() => selectedFile.value && materialId.value)
 const fileExt = computed(() => selectedFile.value?.name.split('.').pop()?.toUpperCase() || 'FILE')
@@ -317,17 +231,25 @@ const reportRows = computed(() => {
 
   const data = report.value
   return [
-    { label: 'SHA-256 是否匹配', value: data.sha256_match ? '是' : '否' },
+    { label: 'SHA-256 是否匹配', value: data.sha256_match ? '是' : '否', kind: 'match' },
     { label: '本地 SHA-256', value: data.sha256_local, copy: true },
     { label: '链上 SHA-256', value: data.sha256_chain, copy: true },
     { label: '本地 SimHash', value: data.sim_hash_local, copy: true },
     { label: '链上 SimHash', value: data.sim_hash_chain, copy: true },
-    { label: '汉明距离', value: data.hamming_dist },
-    { label: '相似度', value: `${data.similarity_pct}%`, kind: 'similarity' },
+    { label: '汉明距离', value: data.hamming_distance },
+    { label: '相似度', value: `${data.similarity_percent}%`, kind: 'similarity' },
     { label: '分类', value: data.classification, kind: 'tag' },
-    { label: '是否被篡改', value: data.is_tampered ? '是' : '否' },
+    { label: '是否被篡改', value: data.is_tampered ? '是' : '否', kind: 'tampered' },
   ]
 })
+
+watch(
+  () => route.query.materialId,
+  (value) => {
+    materialId.value = typeof value === 'string' ? value : ''
+    materialName.value = ''
+  },
+)
 
 function validateFile(file) {
   if (!file) return false
@@ -336,8 +258,8 @@ function validateFile(file) {
     showToast('仅支持 pdf、docx、pptx、txt、md 文件')
     return false
   }
-  if (file.size > 100 * 1024 * 1024) {
-    showToast('文件大小不能超过 100MB')
+  if (file.size > 50 * 1024 * 1024) {
+    showToast('文件大小不能超过 50MB')
     return false
   }
   return true
@@ -376,11 +298,27 @@ async function handleVerify() {
     data.append('material_id', materialId.value)
     const res = await api.postForm('/api/material/verify', data)
     report.value = res.data
+    verificationTime.value = new Date().toLocaleString('zh-CN', { hour12: false })
     showToast(res.data.is_tampered ? '验证完成：检测到文件差异' : '验证完成：文件与链上记录一致')
   } catch (error) {
     showToast(error.message || '验证失败')
   } finally {
     loading.value = false
+  }
+}
+
+async function loadMaterial() {
+  if (!materialId.value) return
+  loadingMaterial.value = true
+  try {
+    const res = await api.get(`/api/material/${encodeURIComponent(materialId.value)}`)
+    materialName.value = res.data?.name || '未命名资料'
+    showToast('已读取链上资料信息')
+  } catch (error) {
+    materialName.value = ''
+    showToast(error.message || '资料读取失败')
+  } finally {
+    loadingMaterial.value = false
   }
 }
 
@@ -398,9 +336,9 @@ function showToast(message) {
   }, 1800)
 }
 
-async function handleLogout() {
-  await auth.logout()
-  router.push('/login')
+async function copyValue(value, label) {
+  const copied = await copyText(String(value ?? ''))
+  showToast(copied ? `${label}已复制` : '复制失败，请手动复制')
 }
 </script>
 
@@ -1226,5 +1164,48 @@ button {
   border-radius: 999px;
   box-shadow: 0 10px 30px rgba(15, 23, 42, 0.18);
   font-size: 14px;
+}
+
+.verify-page {
+  min-width: 0;
+  min-height: calc(100vh - var(--header-height));
+  overflow: visible;
+}
+
+.verify-content {
+  min-height: calc(100vh - var(--header-height));
+  padding: 16px;
+}
+
+.material-name {
+  min-width: 0;
+  margin-left: auto;
+  color: #53647c;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.danger-banner.trusted {
+  color: #166534;
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+}
+
+.pass-dot {
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  color: #fff;
+  background: #16a34a;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.report-list .trusted {
+  color: #16803a;
+  font-weight: 800;
 }
 </style>

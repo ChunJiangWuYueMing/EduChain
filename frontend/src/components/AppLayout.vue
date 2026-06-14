@@ -1,11 +1,9 @@
 <template>
-  <div class="app-layout">
+  <div class="app-shell">
     <AppSidebar />
-
-    <div class="app-main">
+    <div class="app-stage">
       <AppHeader />
-
-      <main class="app-content">
+      <main class="app-view">
         <router-view />
       </main>
     </div>
@@ -13,27 +11,39 @@
 </template>
 
 <script setup>
-import AppSidebar from './AppSidebar.vue'
+import { onBeforeUnmount, onMounted } from 'vue'
 import AppHeader from './AppHeader.vue'
+import AppSidebar from './AppSidebar.vue'
+import { useAuthStore } from '@/stores/auth'
+import { useSystemStore } from '@/stores/system'
+
+const auth = useAuthStore()
+const system = useSystemStore()
+
+onMounted(() => {
+  system.startPolling()
+  auth.refreshBalance()
+})
+
+onBeforeUnmount(system.stopPolling)
 </script>
 
 <style scoped>
-.app-layout {
-  display: flex;
+.app-shell {
   width: 100%;
   min-height: 100vh;
-  background: var(--bg-page);
+  color: var(--text-primary);
+  background: #f4f7fa;
 }
 
-.app-main {
-  flex: 1;
+.app-stage {
   min-width: 0;
+  min-height: 100vh;
   margin-left: var(--sidebar-width);
 }
 
-.app-content {
-  min-height: calc(100vh - var(--header-height));
-  padding: var(--content-padding);
-  padding-top: calc(var(--header-height) + var(--content-padding));
+.app-view {
+  min-height: 100vh;
+  padding-top: var(--header-height);
 }
 </style>

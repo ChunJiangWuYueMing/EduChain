@@ -7,13 +7,10 @@ import Verify from '@/views/Verify.vue'
 import Wallet from '@/views/Wallet.vue'
 import Audit from '@/views/Audit.vue'
 import Status from '@/views/Status.vue'
+import AppLayout from '@/components/AppLayout.vue'
 import { useAuthStore } from '@/stores/auth'
 
 const routes = [
-  {
-    path: '/',
-    redirect: '/login'
-  },
   {
     path: '/login',
     name: 'Login',
@@ -23,40 +20,48 @@ const routes = [
     }
   },
   {
-    path: '/market',
-    name: 'Market',
-    component: Market,
-    meta: { title: '资料市场', requiresAuth: true }
-  },
-  {
-    path: '/upload',
-    name: 'Upload',
-    component: Upload,
-    meta: { title: '上传资料', requiresAuth: true }
-  },
-  {
-    path: '/verify',
-    name: 'Verify',
-    component: Verify,
-    meta: { title: '文件验证', requiresAuth: true }
-  },
-  {
-    path: '/wallet',
-    name: 'Wallet',
-    component: Wallet,
-    meta: { title: '我的钱包', requiresAuth: true }
-  },
-  {
-    path: '/audit',
-    name: 'Audit',
-    component: Audit,
-    meta: { title: '审计追溯', requiresAuth: true }
-  },
-  {
-    path: '/status',
-    name: 'Status',
-    component: Status,
-    meta: { title: '系统状态', requiresAuth: true }
+    path: '/',
+    component: AppLayout,
+    meta: { requiresAuth: true },
+    children: [
+      { path: '', redirect: '/market' },
+      {
+        path: '/market',
+        name: 'Market',
+        component: Market,
+        meta: { title: '资料市场', requiresAuth: true },
+      },
+      {
+        path: '/upload',
+        name: 'Upload',
+        component: Upload,
+        meta: { title: '上传资料', requiresAuth: true },
+      },
+      {
+        path: '/verify',
+        name: 'Verify',
+        component: Verify,
+        meta: { title: '文件验证', requiresAuth: true },
+      },
+      {
+        path: '/wallet',
+        name: 'Wallet',
+        component: Wallet,
+        meta: { title: '我的钱包', requiresAuth: true },
+      },
+      {
+        path: '/audit',
+        name: 'Audit',
+        component: Audit,
+        meta: { title: '审计追溯', requiresAuth: true },
+      },
+      {
+        path: '/status',
+        name: 'Status',
+        component: Status,
+        meta: { title: '系统状态', requiresAuth: true },
+      },
+    ],
   }
 ]
 

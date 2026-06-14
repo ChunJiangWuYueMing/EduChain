@@ -596,6 +596,16 @@ class ChainService:
         raw_list = self._download_log.functions.queryByDownloader(addr).call()
         return [self._parse_download_record(r) for r in raw_list]
 
+    def get_all_downloads(self) -> list[DownloadRecord]:
+        """读取全部下载记录，供管理员全局审计使用。"""
+        self._ensure_init()
+        count = self.get_download_count()
+        records = []
+        for index in range(count):
+            raw = self._download_log.functions.allRecords(index).call()
+            records.append(self._parse_download_record(raw))
+        return records
+
     def get_download_count(self) -> int:
         """获取总下载记录数"""
         self._ensure_init()
@@ -691,6 +701,11 @@ class ChainService:
         """当前区块号"""
         self._ensure_init()
         return self.w3.eth.block_number
+
+    def get_chain_id(self) -> int:
+        """当前连接网络的链 ID。"""
+        self._ensure_init()
+        return self.w3.eth.chain_id
 
     def is_connected(self) -> bool:
         """Ganache 是否连通"""

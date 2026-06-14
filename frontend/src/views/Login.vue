@@ -11,8 +11,8 @@
         <div class="bridge-line" aria-hidden="true"></div>
 
         <div class="system-status">
-          <span class="status-dot dot-ok"></span>
-          <span>系统状态：正常</span>
+          <span class="status-dot" :class="{ 'dot-ok': backendOk && chainOk }"></span>
+          <span>系统状态：{{ backendOk && chainOk ? '正常' : '连接检查中' }}</span>
         </div>
       </aside>
 
@@ -91,8 +91,9 @@
 
         <div class="assist-row">
           <span>测试账号：2023116101 / 2023116101（仅供本地演示）</span>
-          <button type="button" class="text-button">忘记密码？</button>
+          <button type="button" class="text-button" @click="showPasswordHelp">忘记密码？</button>
         </div>
+        <p v-if="assistMsg" class="assist-message">{{ assistMsg }}</p>
 
         <div class="connection-card">
           <div class="connection-item">
@@ -156,7 +157,7 @@
       </section>
 
       <footer class="login-footer">
-        <p>© 2024 西南交通大学 · 信息化与网络管理处</p>
+        <p>© {{ currentYear }} 西南交通大学 · 信息化与网络管理处</p>
         <p>技术支持：EduChain 团队</p>
       </footer>
     </section>
@@ -165,8 +166,7 @@
 
 <script setup>
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import api from '@/utils/api'
 import logoUrl from '@/assets/images/swjtu-logo-white.png'
@@ -185,8 +185,10 @@ const passwordInput = ref(null)
 const showPassword = ref(false)
 const loading = ref(false)
 const errorMsg = ref('')
+const assistMsg = ref('')
 const backendOk = ref(false)
 const chainOk = ref(false)
+const currentYear = new Date().getFullYear()
 
 const features = [
   {
@@ -231,6 +233,10 @@ async function handleLogin() {
   }
 }
 
+function showPasswordHelp() {
+  assistMsg.value = '当前为本地课程演示系统，不提供在线找回。请使用页面中的测试账号，或联系项目管理员重置本地账号。'
+}
+
 api.get('/api/health').then((res) => {
   backendOk.value = res.data?.status === 'running'
   chainOk.value = !!res.data?.ganache_connected
@@ -248,6 +254,17 @@ api.get('/api/health').then((res) => {
   background:
     radial-gradient(circle at 78% 18%, rgba(0, 121, 186, 0.11), transparent 34%),
     linear-gradient(120deg, #ffffff 0%, #f8fbff 48%, #eef6ff 100%);
+}
+
+.assist-message {
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  color: #315b7d;
+  background: #edf7ff;
+  border: 1px solid #c7dff4;
+  border-radius: 6px;
+  font-size: 13px;
+  line-height: 1.5;
 }
 
 .login-canvas {

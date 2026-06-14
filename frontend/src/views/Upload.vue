@@ -1,87 +1,5 @@
 <template>
   <main class="upload-page">
-    <aside class="app-sidebar">
-      <div class="sidebar-brand">
-        <img :src="logoUrl" alt="西南交通大学 EduChain" />
-        <p>校园学习资料可信分发</p>
-      </div>
-
-      <nav class="sidebar-nav" aria-label="功能导航">
-        <button
-          v-for="item in navItems"
-          :key="item.label"
-          type="button"
-          class="nav-item"
-          :class="{ active: item.active }"
-          :disabled="!item.path"
-          @click="item.path && router.push(item.path)"
-        >
-          <span v-html="item.icon"></span>
-          {{ item.label }}
-        </button>
-      </nav>
-
-      <img class="sidebar-watermark" :src="sidebarArtUrl" alt="" aria-hidden="true" />
-      <div class="sidebar-bridge" aria-hidden="true"></div>
-
-      <div class="chain-local">
-        <span class="status-dot"></span>
-        <span>Ganache Local</span>
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5" /></svg>
-      </div>
-    </aside>
-
-    <header class="app-header">
-      <h1>上传资料</h1>
-      <div class="header-actions">
-        <button class="icon-button" type="button" aria-label="搜索">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <circle cx="11" cy="11" r="7" />
-            <path d="m20 20-3.5-3.5" />
-          </svg>
-        </button>
-        <div class="chain-status">
-          <span>链状态</span>
-          <span class="status-dot"></span>
-          <strong>已连接</strong>
-        </div>
-        <section class="user-card" aria-label="当前用户">
-          <div class="avatar">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="12" cy="8" r="4" />
-              <path d="M4 21a8 8 0 0 1 16 0" />
-            </svg>
-          </div>
-          <div class="user-main">
-            <strong>{{ auth.user?.name || '--' }}</strong>
-            <span>学号：{{ auth.user?.student_id || '--' }}</span>
-          </div>
-          <div class="user-metric">
-            <span>EDU 余额</span>
-            <strong>{{ auth.user?.edu_balance ?? '--' }}</strong>
-          </div>
-          <div class="user-address">
-            <span>地址</span>
-            <strong>{{ truncate(auth.user?.eth_address) }}</strong>
-            <button type="button" aria-label="复制地址">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <rect x="9" y="9" width="11" height="11" rx="2" />
-                <rect x="4" y="4" width="11" height="11" rx="2" />
-              </svg>
-            </button>
-          </div>
-          <button class="logout-button" type="button" @click="handleLogout">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M10 17 15 12l-5-5" />
-              <path d="M15 12H3" />
-              <path d="M21 19V5a2 2 0 0 0-2-2h-6" />
-            </svg>
-            登出
-          </button>
-        </section>
-      </div>
-    </header>
-
     <section class="upload-content">
       <div class="upload-main">
         <section class="hero-card">
@@ -117,10 +35,10 @@
             <span>课程编号</span>
             <select v-model="form.course">
               <option value="">选择课程或输入课程编号</option>
-              <option value="CS201">CS201 计算机网络</option>
-              <option value="CS301">CS301 数据结构</option>
+              <option value="CS201">CS201 数据结构</option>
+              <option value="CS301">CS301 操作系统</option>
+              <option value="CS302">CS302 计算机网络</option>
               <option value="MATH101">MATH101 高等数学</option>
-              <option value="AI202">AI202 人工智能导论</option>
             </select>
           </label>
 
@@ -144,12 +62,24 @@
               <span>同课程</span>
               <em>仅本课程学生可见</em>
             </label>
-            <label class="disabled">
-              <input type="radio" disabled />
-              <span>白名单（预留）</span>
-              <em>暂不可用</em>
+            <label>
+              <input v-model="form.policy" type="radio" value="whitelist" />
+              <span>指定用户</span>
+              <em>仅白名单地址可下载</em>
             </label>
           </fieldset>
+
+          <label v-if="form.policy === 'whitelist'" class="field whitelist-field">
+            <span>白名单地址</span>
+            <textarea
+              v-model.trim="form.policyValue"
+              rows="3"
+              placeholder="输入 0x 开头的钱包地址，多个地址请用逗号或换行分隔"
+            ></textarea>
+            <small :class="{ invalid: form.policyValue && !whitelistValid }">
+              {{ whitelistHint }}
+            </small>
+          </label>
 
           <button type="button" class="submit-button" :disabled="!canSubmit || loading" @click="handleUpload">
             <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -205,7 +135,12 @@
               <dt>{{ row.label }}</dt>
               <dd>
                 {{ row.value }}
-                <button v-if="row.copy" type="button" aria-label="复制">
+                <button
+                  v-if="row.copy"
+                  type="button"
+                  :aria-label="`复制${row.label}`"
+                  @click="copyValue(row.value, row.label)"
+                >
                   <svg viewBox="0 0 24 24" aria-hidden="true">
                     <rect x="9" y="9" width="11" height="11" rx="2" />
                     <rect x="4" y="4" width="11" height="11" rx="2" />
@@ -236,6 +171,9 @@
                 <td>{{ item.score }} / {{ item.distance }}</td>
                 <td><span class="similar-tag" :class="item.type">{{ item.label }}</span></td>
               </tr>
+              <tr v-if="similarMaterials.length === 0">
+                <td colspan="5" class="similar-empty-row">未发现需要提示的相似资料</td>
+              </tr>
             </tbody>
           </table>
           <div v-else class="similar-empty">上传完成后会自动比对相似资料。</div>
@@ -246,7 +184,7 @@
             <strong>上传须知</strong>
             <p>请确保您拥有资料的合法版权或授权，上传的资料需遵守学校相关规定与法律法规。</p>
           </div>
-          <button type="button">查看上传规则</button>
+          <button type="button" @click="rulesOpen = true">查看上传规则</button>
         </section>
 
         <div class="panel-actions">
@@ -262,6 +200,25 @@
       </aside>
     </section>
 
+    <Teleport to="body">
+      <div v-if="rulesOpen" class="rules-backdrop" @click.self="rulesOpen = false">
+        <section class="rules-dialog" role="dialog" aria-modal="true" aria-labelledby="upload-rules-title">
+          <header>
+            <h2 id="upload-rules-title">资料上传规则</h2>
+            <button type="button" aria-label="关闭上传规则" @click="rulesOpen = false">×</button>
+          </header>
+          <ol>
+            <li>仅上传拥有版权、已获授权或允许用于课程交流的资料。</li>
+            <li>文件不得包含违法内容、恶意代码、他人隐私或未脱敏的敏感信息。</li>
+            <li>课程编号、价格和访问策略应与资料用途一致，链上登记后会形成可审计记录。</li>
+            <li>白名单策略仅接受有效的以太坊地址，多个地址可使用逗号或换行分隔。</li>
+            <li>系统会计算 SHA-256 与 SimHash；发现高相似资料时，请确认不存在重复提交。</li>
+          </ol>
+          <button type="button" class="primary-action" @click="rulesOpen = false">我已了解</button>
+        </section>
+      </div>
+    </Teleport>
+
     <div v-if="toast" class="toast" role="status">{{ toast }}</div>
   </main>
 </template>
@@ -269,10 +226,9 @@
 <script setup>
 import { computed, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import api, { formatTime, truncate } from '@/utils/api'
+import api, { formatTime } from '@/utils/api'
 import { useAuthStore } from '@/stores/auth'
-import logoUrl from '@/assets/images/swjtu-logo-white.png'
-import sidebarArtUrl from '@/assets/images/educhain_white_logo.png'
+import { copyText } from '@/utils/clipboard'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -282,22 +238,15 @@ const isDragging = ref(false)
 const loading = ref(false)
 const result = ref(null)
 const toast = ref('')
+const rulesOpen = ref(false)
 const acceptedTypes = '.pdf,.docx,.pptx,.txt,.md'
 
 const form = reactive({
   course: '',
   price: 12,
   policy: 'public',
+  policyValue: '',
 })
-
-const navItems = [
-  { label: '资料市场', active: false, path: '/market', icon: '<svg viewBox="0 0 24 24"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v5h5"/><path d="M10 13h6"/><path d="M10 17h6"/></svg>' },
-  { label: '上传资料', active: true, path: '/upload', icon: '<svg viewBox="0 0 24 24"><path d="M12 3v12"/><path d="m7 8 5-5 5 5"/><path d="M5 15a4 4 0 0 0 0 8h14a4 4 0 0 0 0-8"/></svg>' },
-  { label: '文件验证', active: false, path: '/verify', icon: '<svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg>' },
-  { label: '我的钱包', active: false, path: '/wallet', icon: '<svg viewBox="0 0 24 24"><path d="M4 7h15a2 2 0 0 1 2 2v10H4a2 2 0 0 1-2-2V5a2 2 0 0 0 2 2Z"/><path d="M16 13h4"/></svg>' },
-  { label: '审计追溯', active: false, path: '/audit', icon: '<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><circle cx="11" cy="15" r="2"/><path d="m13 17 3 3"/></svg>' },
-  { label: '系统状态', active: false, path: '/status', icon: '<svg viewBox="0 0 24 24"><path d="M3 4h18v14H3z"/><path d="M8 22h8"/><path d="M12 18v4"/><path d="m7 13 3-3 2 2 4-5"/></svg>' },
-]
 
 const steps = [
   { index: 1, title: '文件指纹计算中', desc: '计算文件哈希与指纹' },
@@ -307,9 +256,9 @@ const steps = [
 
 const similarMaterials = computed(() => (result.value?.similar_materials || []).map((item) => ({
   id: item.material_id || item.id || '--',
-  name: item.name || '链上相似资料',
+  name: item.material_name || item.name || '链上相似资料',
   course: item.course || '--',
-  score: item.similarity ?? item.similarity_pct ?? '--',
+  score: item.similarity_percent ?? item.similarity ?? item.similarity_pct ?? '--',
   distance: item.hamming_distance ?? item.distance ?? '--',
   type: item.classification || 'derived',
   label: {
@@ -320,7 +269,25 @@ const similarMaterials = computed(() => (result.value?.similar_materials || []).
   }[item.classification] || '相似资料',
 })))
 
-const canSubmit = computed(() => selectedFile.value && form.course && form.price >= 0)
+const whitelistAddresses = computed(() => form.policyValue
+  .split(/[\n,]/)
+  .map((value) => value.trim())
+  .filter(Boolean))
+const whitelistValid = computed(() => (
+  whitelistAddresses.value.length > 0
+  && whitelistAddresses.value.every((value) => /^0x[a-fA-F0-9]{40}$/.test(value))
+))
+const whitelistHint = computed(() => {
+  if (!form.policyValue) return '至少填写一个钱包地址'
+  if (!whitelistValid.value) return '存在格式无效的地址，请检查 0x 地址长度'
+  return `已识别 ${whitelistAddresses.value.length} 个有效地址`
+})
+const canSubmit = computed(() => (
+  selectedFile.value
+  && form.course
+  && form.price >= 0
+  && (form.policy !== 'whitelist' || whitelistValid.value)
+))
 const currentStep = computed(() => {
   if (result.value) return 4
   if (loading.value) return 2
@@ -386,6 +353,7 @@ async function handleUpload() {
     data.append('course', form.course)
     data.append('price', String(form.price))
     data.append('policy_type', String({ public: 0, 'same-course': 1, whitelist: 2 }[form.policy] ?? 0))
+    data.append('policy_value', form.policy === 'whitelist' ? whitelistAddresses.value.join(',') : '')
     const res = await api.postForm('/api/material/upload', data)
     result.value = {
       ...res.data,
@@ -406,6 +374,7 @@ function resetForm() {
   form.course = ''
   form.price = 12
   form.policy = 'public'
+  form.policyValue = ''
   if (fileInput.value) fileInput.value.value = ''
 }
 
@@ -423,9 +392,9 @@ function showToast(message) {
   }, 1800)
 }
 
-async function handleLogout() {
-  await auth.logout()
-  router.push('/login')
+async function copyValue(value, label) {
+  const copied = await copyText(String(value ?? ''))
+  showToast(copied ? `${label}已复制` : '复制失败，请手动复制')
 }
 </script>
 
@@ -1340,5 +1309,109 @@ button {
   border-radius: 999px;
   box-shadow: 0 10px 30px rgba(15, 23, 42, 0.18);
   font-size: 14px;
+}
+
+.upload-page {
+  min-width: 0;
+  min-height: calc(100vh - var(--header-height));
+  overflow: visible;
+}
+
+.upload-content {
+  min-height: calc(100vh - var(--header-height));
+  padding: 16px;
+}
+
+.whitelist-field textarea {
+  width: 100%;
+  resize: vertical;
+  padding: 10px 12px;
+  color: #10233f;
+  background: #fff;
+  border: 1px solid #dce4ef;
+  border-radius: 6px;
+  font: inherit;
+  line-height: 1.5;
+}
+
+.whitelist-field small {
+  color: #16803a;
+}
+
+.whitelist-field small.invalid {
+  color: #c2410c;
+}
+
+.similar-empty-row {
+  height: 72px;
+  color: #7a889b;
+  text-align: center;
+}
+
+.rules-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(9, 25, 48, 0.48);
+  backdrop-filter: blur(3px);
+}
+
+.rules-dialog {
+  width: min(560px, 100%);
+  padding: 24px;
+  color: #10233f;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 24px 70px rgba(9, 25, 48, 0.28);
+}
+
+.rules-dialog header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.rules-dialog h2 {
+  margin: 0;
+}
+
+.rules-dialog header button {
+  width: 36px;
+  height: 36px;
+  color: #53647c;
+  background: transparent;
+  border: 0;
+  font-size: 28px;
+}
+
+.rules-dialog ol {
+  display: grid;
+  gap: 12px;
+  margin: 22px 0;
+  padding-left: 24px;
+  color: #53647c;
+  line-height: 1.65;
+}
+
+.rules-dialog > .primary-action {
+  width: 100%;
+}
+
+@media (max-width: 1450px) {
+  .upload-content {
+    grid-template-columns: minmax(0, 1fr) 460px;
+  }
+
+  .upload-main,
+  .result-panel {
+    min-width: 0;
+  }
+
+  .similar-card {
+    overflow-x: auto;
+  }
 }
 </style>
